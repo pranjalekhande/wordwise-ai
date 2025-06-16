@@ -17,6 +17,7 @@ interface AppState {
   // UI State
   isAutoSaving: boolean
   lastSaved: Date | null
+  isInitialized: boolean
 
   // Actions
   setProjects: (projects: CarouselProject[]) => void
@@ -37,6 +38,7 @@ interface AppState {
 
   setAutoSaving: (saving: boolean) => void
   setLastSaved: (date: Date) => void
+  initialize: () => Promise<void>
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -49,6 +51,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedTemplate: null,
   isAutoSaving: false,
   lastSaved: null,
+  isInitialized: false,
 
   // Project actions
   setProjects: (projects) => set({ projects }),
@@ -94,4 +97,23 @@ export const useAppStore = create<AppState>((set, get) => ({
   // UI actions
   setAutoSaving: (saving) => set({ isAutoSaving: saving }),
   setLastSaved: (date) => set({ lastSaved: date }),
+
+  // Initialize store with data from API
+  initialize: async () => {
+    const state = get()
+    if (state.isInitialized) return
+
+    try {
+      // Fetch templates
+      const templatesResponse = await fetch("/api/templates")
+      if (templatesResponse.ok) {
+        const { templates } = await templatesResponse.json()
+        set({ templates })
+      }
+
+      set({ isInitialized: true })
+    } catch (error) {
+      console.error("Error initializing store:", error)
+    }
+  },
 }))

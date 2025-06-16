@@ -13,6 +13,7 @@ import { useAppStore } from "@/lib/store"
 import { formatDate } from "@/lib/utils"
 import { NewProjectDialog } from "./new-project-dialog"
 import { useRouter } from "next/navigation"
+import { DocumentUpload } from "@/components/documents/document-upload"
 
 export function ProjectList() {
   const { projects, setProjects, deleteProject } = useAppStore()
@@ -66,7 +67,10 @@ export function ProjectList() {
           <h1 className="text-3xl font-bold">Projects</h1>
           <p className="text-muted-foreground">Manage your Instagram carousel projects</p>
         </div>
-        <NewProjectDialog />
+        <div className="flex items-center gap-2">
+          <DocumentUpload />
+          <NewProjectDialog />
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

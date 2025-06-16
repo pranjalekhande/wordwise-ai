@@ -3,12 +3,13 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
-import { Upload, FileText, Loader2 } from "lucide-react"
+import { Upload, FileText, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export function DocumentUpload({ onDocumentCreated }: DocumentUploadProps) {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -60,20 +62,33 @@ export function DocumentUpload({ onDocumentCreated }: DocumentUploadProps) {
   }
 
   const handleFile = async (file: File) => {
-    if (file.type === "text/plain" || file.type === "application/pdf") {
-      const text = await file.text()
-      setContent(text)
-      setTitle(file.name.replace(/\.[^/.]+$/, ""))
+    try {
+      if (file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".md")) {
+        const text = await file.text()
+        setContent(text)
+        setTitle(file.name.replace(/\.[^/.]+$/, ""))
+        setError(null)
+      } else {
+        setError("Please upload a text file (.txt or .md)")
+      }
+    } catch (error) {
+      setError("Failed to read file")
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !content.trim()) return
+    if (!title.trim() || !content.trim()) {
+      setError("Please provide both title and content")
+      return
+    }
 
     setIsLoading(true)
+    setError(null)
 
     try {
+      console.log("Submitting document:", { title: title.trim(), contentLength: content.trim().length })
+
       const response = await fetch("/api/documents", {
         method: "POST",
         headers: {
@@ -85,18 +100,23 @@ export function DocumentUpload({ onDocumentCreated }: DocumentUploadProps) {
         }),
       })
 
+      const responseData = await response.json()
+      console.log("Response:", responseData)
+
       if (!response.ok) {
-        throw new Error("Failed to create document")
+        throw new Error(responseData.message || responseData.error || "Failed to create document")
       }
 
-      const { document } = await response.json()
+      const { document } = responseData
       onDocumentCreated?.(document)
 
       setOpen(false)
       setTitle("")
       setContent("")
+      setError(null)
     } catch (error) {
       console.error("Error creating document:", error)
+      setError(error instanceof Error ? error.message : "Failed to create document")
     } finally {
       setIsLoading(false)
     }
@@ -116,6 +136,14 @@ export function DocumentUpload({ onDocumentCreated }: DocumentUploadProps) {
             <DialogTitle>Add Document</DialogTitle>
             <DialogDescription>Upload a text file or paste your content to create a new document.</DialogDescription>
           </DialogHeader>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="title">Document Title</Label>

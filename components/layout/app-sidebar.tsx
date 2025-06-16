@@ -25,6 +25,11 @@ const navigation = [
     icon: Home,
   },
   {
+    title: "Documents",
+    url: "/documents",
+    icon: FileText,
+  },
+  {
     title: "Projects",
     url: "/projects",
     icon: FileText,

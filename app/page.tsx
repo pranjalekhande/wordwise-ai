@@ -1,21 +1,76 @@
 "use client"
 
 import { ProjectList } from "@/components/dashboard/project-list"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { FileText, Plus, TrendingUp, Target } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function Dashboard() {
-  // Temporarily disabled authentication check
-  // const { isSignedIn } = useAuth()
+  const router = useRouter()
 
-  // if (!isSignedIn) {
-  //   return (
-  //     <div className="container mx-auto p-6">
-  //       <DemoProjectList />
-  //     </div>
-  //   )
-  // }
+  const handleNewDocument = () => {
+    router.push("/documents/new")
+  }
+
+  const handleNewProject = () => {
+    router.push("/projects")
+  }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 space-y-8">
+      {/* Quick Actions */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleNewDocument}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              New Document
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Start writing with our AI-powered editor</p>
+          </CardContent>
+        </Card>
+
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleNewProject}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              New Project
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">Create Instagram carousel content</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Writing Score
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">85</div>
+            <p className="text-xs text-muted-foreground">Average readability</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Daily Goal
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">342/500</div>
+            <p className="text-xs text-muted-foreground">Words written today</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <ProjectList />
     </div>
   )
