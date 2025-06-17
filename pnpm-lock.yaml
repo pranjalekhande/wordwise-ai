@@ -131,9 +131,7 @@ importers:
       next-themes:
         specifier: ^0.4.4
         version: 0.4.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      officeparser:
-        specifier: ^5.1.1
-        version: 5.1.1
+
       react:
         specifier: ^19
         version: 19.0.0
@@ -1667,9 +1665,7 @@ packages:
     resolution: {integrity: sha512-RSn9F68PjH9HqtltsSnqYC1XXoWe9Bju5+213R98cNGttag9q9yAOTzdbsqvIa7aNm5WffBZFpWYr2aWrklWAw==}
     engines: {node: '>= 6'}
 
-  officeparser@5.1.1:
-    resolution: {integrity: sha512-trBCPmYQDFUCmch6YBxHhMFkDyhTl+vG8PDQHPOwRyeCDKnrrKpph2W7og7hg5T5RRF0yeyaOMasN7GZWbYuCA==}
-    hasBin: true
+
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
@@ -3587,13 +3583,7 @@ snapshots:
 
   object-hash@3.0.0: {}
 
-  officeparser@5.1.1:
-    dependencies:
-      '@xmldom/xmldom': 0.8.10
-      concat-stream: 2.0.0
-      file-type: 16.5.4
-      node-ensure: 0.0.0
-      yauzl: 3.2.0
+
 
   package-json-from-dist@1.0.1: {}
 
