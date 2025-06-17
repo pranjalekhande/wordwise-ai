@@ -1,27 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
+import { requireAuth } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const userId = await requireAuth()
     const supabase = createServerSupabaseClient()
-    const userId = "demo-user-123"
-
-    // Ensure the demo user exists
-    const { data: user, error: userError } = await supabase.from("users").select("id").eq("id", userId).single()
-
-    if (userError || !user) {
-      console.log("Demo user not found, creating...")
-      const { error: createUserError } = await supabase.from("users").upsert({
-        id: userId,
-        email: "demo@wordwise.ai",
-        name: "Demo User",
-        plan_type: "pro",
-      })
-
-      if (createUserError) {
-        console.error("Error creating demo user:", createUserError)
-      }
-    }
 
     // Try to fetch projects with relationships first
     let { data: projects, error } = await supabase
@@ -89,6 +73,10 @@ export async function GET() {
 
     return NextResponse.json({ projects: projects || [] })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in GET /api/projects:", error)
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 })
   }
@@ -96,31 +84,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = await requireAuth()
     const supabase = createServerSupabaseClient()
-    const userId = "demo-user-123"
 
     const body = await request.json()
     const { title, description, template_id, document_id, target_audience } = body
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
-    }
-
-    // Ensure the demo user exists
-    const { data: user, error: userError } = await supabase.from("users").select("id").eq("id", userId).single()
-
-    if (userError || !user) {
-      const { error: createUserError } = await supabase.from("users").upsert({
-        id: userId,
-        email: "demo@wordwise.ai",
-        name: "Demo User",
-        plan_type: "pro",
-      })
-
-      if (createUserError) {
-        console.error("Error creating demo user:", createUserError)
-        return NextResponse.json({ error: "Failed to create user", details: createUserError }, { status: 500 })
-      }
     }
 
     // Create project
@@ -157,6 +128,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ project })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in POST /api/projects:", error)
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 })
   }

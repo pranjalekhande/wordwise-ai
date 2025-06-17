@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { requireAuth } from "@/lib/auth"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ document: null })
     }
 
-    const userId = "demo-user-123"
+    const userId = await requireAuth()
 
     const { data: document, error } = await supabase
       .from("documents")
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ document })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in GET /api/documents/[id]:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
@@ -40,7 +45,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Cannot update new document" }, { status: 400 })
     }
 
-    const userId = "demo-user-123"
+    const userId = await requireAuth()
 
     const body = await request.json()
     const { title, content } = body
@@ -74,6 +79,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ document })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in PUT /api/documents/[id]:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
@@ -88,7 +97,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Cannot delete new document" }, { status: 400 })
     }
 
-    const userId = "demo-user-123"
+    const userId = await requireAuth()
 
     const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", userId)
 
@@ -99,6 +108,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in DELETE /api/documents/[id]:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

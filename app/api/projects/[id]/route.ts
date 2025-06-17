@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
+import { requireAuth } from "@/lib/auth"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const supabase = createServerSupabaseClient()
-    const userId = "demo-user-123"
+    const userId = await requireAuth()
 
     // Try to fetch project with relationships first
     let { data: project, error } = await supabase
@@ -74,6 +75,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ project })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in GET /api/projects/[id]:", error)
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 })
   }
@@ -83,7 +88,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
     const supabase = createServerSupabaseClient()
-    const userId = "demo-user-123"
+    const userId = await requireAuth()
 
     const body = await request.json()
     const { title, description, template_id, document_id, target_audience } = body
@@ -109,6 +114,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ project })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in PUT /api/projects/[id]:", error)
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 })
   }
@@ -118,7 +127,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const { id } = await params
     const supabase = createServerSupabaseClient()
-    const userId = "demo-user-123"
+    const userId = await requireAuth()
 
     const { error } = await supabase.from("carousel_projects").delete().eq("id", id).eq("user_id", userId)
 
@@ -129,6 +138,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in DELETE /api/projects/[id]:", error)
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 })
   }

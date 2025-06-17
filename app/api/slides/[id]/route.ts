@@ -1,18 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
+import { requireAuth } from "@/lib/auth"
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    
-    // Temporarily disabled authentication
-    // const { userId } = await auth()
-    // if (!userId) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    // }
-
-    // Using demo user ID for now
-    const userId = "demo-user-123"
+    const userId = await requireAuth()
 
     const body = await request.json()
     const { content, tone } = body
@@ -51,6 +44,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ slide: updatedSlide })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in PUT /api/slides/[id]:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
