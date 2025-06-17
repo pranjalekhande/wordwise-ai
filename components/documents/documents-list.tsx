@@ -67,6 +67,38 @@ export function DocumentsList() {
     }
   }
 
+  const getFileExtension = (fileName: string): string => {
+    const extension = fileName.split('.').pop()?.toUpperCase()
+    return extension || 'FILE'
+  }
+
+  /**
+   * Convert file type/MIME type to user-friendly display text
+   * Handles special cases for uploaded files and provides fallbacks for other types
+   * DOCX support temporarily disabled
+   */
+  const getFileTypeDisplay = (fileType: string): string => {
+    // DOCX support temporarily disabled
+    // // Handle Microsoft Word documents - both MIME type and file extension matching
+    // if (fileType?.includes('wordprocessingml') || fileType?.includes('docx')) {
+    //   return 'Word Document'
+    // }
+    // Handle plain text files
+    if (fileType?.includes('text/plain') || fileType?.includes('txt')) {
+      return 'Text File'
+    }
+    // Handle markdown files
+    if (fileType?.includes('markdown') || fileType?.includes('md')) {
+      return 'Markdown'
+    }
+    // Check for docx files and show as disabled
+    if (fileType?.includes('wordprocessingml') || fileType?.includes('docx')) {
+      return 'Word Document (Legacy)'
+    }
+    // Fallback for any other uploaded file types
+    return 'Uploaded File'
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -162,13 +194,23 @@ export function DocumentsList() {
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>
                     {document.word_count} words • {document.char_count} chars
+                    {document.file_name && (
+                      <span className="ml-2">• {getFileTypeDisplay(document.file_type || document.file_name)}</span>
+                    )}
                   </span>
                   <span>{formatDate(document.updated_at)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary" className="text-xs">
-                    {document.language.toUpperCase()}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {document.language.toUpperCase()}
+                    </Badge>
+                    {document.file_name && (
+                      <Badge variant="outline" className="text-xs">
+                        {getFileExtension(document.file_name)}
+                      </Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full bg-green-500" />
                     <span className="text-xs text-muted-foreground">Saved</span>

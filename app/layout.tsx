@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "WordWise AI - Instagram Carousel Copy",
+  title: "WordWise AI - Instagram Carousel",
   description: "AI-powered Instagram carousel copywriting tool",
     generator: 'v0.dev'
 }

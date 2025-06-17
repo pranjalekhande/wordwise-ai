@@ -41,13 +41,23 @@ export async function GET() {
   }
 }
 
+/**
+ * POST endpoint to create new documents
+ * Supports documents created from uploaded files (.txt, .md) or manual text input
+ * DOCX support temporarily disabled
+ * For uploaded files, stores metadata (file_name, file_size, file_type) for tracking and display
+ */
 export async function POST(request: NextRequest) {
   try {
     const supabase = createServerSupabaseClient()
     const userId = "demo-user-123"
 
     const body = await request.json()
-    const { title, content } = body
+    // Extract file metadata along with content - these fields are optional and only present for uploaded files
+    // file_name: original filename (e.g., "notes.txt", "readme.md") - docx temporarily disabled
+    // file_size: file size in bytes (helpful for storage tracking)
+    // file_type: MIME type (e.g., "text/plain" for .txt, "text/markdown" for .md)
+    const { title, content, file_name, file_size, file_type } = body
 
     // More lenient validation - require at least a title
     if (!title || title.trim().length === 0) {
@@ -82,18 +92,34 @@ export async function POST(request: NextRequest) {
       word_count: wordCount,
       char_count: charCount,
       content_length: contentToSave.length,
+      // Log file metadata for debugging - helps track uploaded files (.txt, .md)
+      file_name,
+      file_size,
+      file_type,
     })
+
+    // Prepare base document data - required fields for all documents
+    const documentData: any = {
+      user_id: userId,
+      title: title.trim(),
+      content: contentToSave,
+      word_count: wordCount,
+      char_count: charCount,
+      language: "en",
+    }
+
+          // Add file metadata if provided (only for uploaded files like .txt, .md - docx disabled)
+      // This metadata helps with:
+      // 1. Displaying file type indicators in the UI
+      // 2. Tracking original file information
+      // 3. Potential future features like re-export or file history
+    if (file_name) documentData.file_name = file_name
+    if (file_size) documentData.file_size = file_size
+    if (file_type) documentData.file_type = file_type
 
     const { data: document, error } = await supabase
       .from("documents")
-      .insert({
-        user_id: userId,
-        title: title.trim(),
-        content: contentToSave,
-        word_count: wordCount,
-        char_count: charCount,
-        language: "en",
-      })
+      .insert(documentData)
       .select()
       .single()
 

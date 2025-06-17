@@ -65,7 +65,7 @@ export function AppSidebar() {
           </div>
           <div>
             <h2 className="text-lg font-semibold">WordWise AI</h2>
-            <p className="text-xs text-muted-foreground">Instagram Carousel Copy</p>
+            <p className="text-xs text-muted-foreground">Instagram Carousel</p>
           </div>
         </div>
       </SidebarHeader>
