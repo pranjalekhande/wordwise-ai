@@ -85,6 +85,31 @@ export function ProjectList() {
     }
   }
 
+  const handleDocumentDelete = async (documentId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    if (!confirm("Are you sure you want to delete this document?")) return
+
+    try {
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        // Refresh the recent documents list after deletion
+        fetchRecentDocuments()
+      }
+    } catch (error) {
+      console.error("Error deleting document:", error)
+    }
+  }
+
+  const handleDocumentExport = (documentId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    // TODO: Implement export functionality
+    console.log("Export document:", documentId)
+  }
+
   const getFileExtension = (fileName: string): string => {
     if (!fileName) return 'DOC'
     const extension = fileName.split('.').pop()?.toUpperCase()
@@ -218,6 +243,30 @@ export function ProjectList() {
                       <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                       <h3 className="font-semibold truncate">{document.title}</h3>
                     </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleDocumentClick(document.id)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleDocumentExport(document.id, e)}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Export
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-destructive" 
+                          onClick={(e) => handleDocumentDelete(document.id, e)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardHeader>
                 <CardContent>
