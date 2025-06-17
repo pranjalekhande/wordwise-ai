@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, FileText, Home, Settings, LayoutTemplateIcon as Template, User } from "lucide-react"
+import { Calendar, FileText, Home, Settings, LayoutTemplateIcon as Template, User, LogOut } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -15,8 +15,8 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-// import { useAuth, useUser, SignOutButton } from "@clerk/nextjs"
-// import { Button } from "@/components/ui/button"
+import { useAuth, useUser, SignOutButton } from "@clerk/nextjs"
+import { Button } from "@/components/ui/button"
 
 const navigation = [
   {
@@ -52,9 +52,8 @@ const navigation = [
 ]
 
 export function AppSidebar() {
-  // Temporarily disabled Clerk authentication
-  // const { user } = useUser()
-  // const { isSignedIn } = useAuth()
+  const { user } = useUser()
+  const { isSignedIn } = useAuth()
 
   return (
     <Sidebar>
@@ -91,21 +90,6 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        {/* Temporarily using demo user instead of Clerk */}
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg?height=32&width=32" />
-            <AvatarFallback>
-              <User className="h-4 w-4" />
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Demo User</p>
-            <p className="text-xs text-muted-foreground truncate">demo@wordwise.ai</p>
-          </div>
-        </div>
-
-        {/* Clerk authentication code (commented out)
         {isSignedIn ? (
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
@@ -128,7 +112,9 @@ export function AppSidebar() {
         ) : (
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
-              <AvatarFallback>D</AvatarFallback>
+              <AvatarFallback>
+                <User className="h-4 w-4" />
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">Demo User</p>
@@ -136,7 +122,6 @@ export function AppSidebar() {
             </div>
           </div>
         )}
-        */}
       </SidebarFooter>
 
       <SidebarRail />

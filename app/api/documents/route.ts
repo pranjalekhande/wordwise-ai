@@ -1,27 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
+import { requireAuth } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const userId = await requireAuth()
     const supabase = createServerSupabaseClient()
-    const userId = "demo-user-123"
-
-    // First, ensure the demo user exists
-    const { data: user, error: userError } = await supabase.from("users").select("id").eq("id", userId).single()
-
-    if (userError || !user) {
-      console.log("Demo user not found, creating...")
-      const { error: createUserError } = await supabase.from("users").upsert({
-        id: userId,
-        email: "demo@wordwise.ai",
-        name: "Demo User",
-        plan_type: "pro",
-      })
-
-      if (createUserError) {
-        console.error("Error creating demo user:", createUserError)
-      }
-    }
 
     const { data: documents, error } = await supabase
       .from("documents")
@@ -36,6 +20,10 @@ export async function GET() {
 
     return NextResponse.json({ documents: documents || [] })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in GET /api/documents:", error)
     return NextResponse.json({ error: "Internal server error", details: error }, { status: 500 })
   }
@@ -49,8 +37,8 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    const userId = await requireAuth()
     const supabase = createServerSupabaseClient()
-    const userId = "demo-user-123"
 
     const body = await request.json()
     // Extract file metadata along with content - these fields are optional and only present for uploaded files
@@ -62,24 +50,6 @@ export async function POST(request: NextRequest) {
     // More lenient validation - require at least a title
     if (!title || title.trim().length === 0) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
-    }
-
-    // Ensure the demo user exists first
-    const { data: user, error: userError } = await supabase.from("users").select("id").eq("id", userId).single()
-
-    if (userError || !user) {
-      console.log("Demo user not found, creating...")
-      const { error: createUserError } = await supabase.from("users").upsert({
-        id: userId,
-        email: "demo@wordwise.ai",
-        name: "Demo User",
-        plan_type: "pro",
-      })
-
-      if (createUserError) {
-        console.error("Error creating demo user:", createUserError)
-        return NextResponse.json({ error: "Failed to create user", details: createUserError }, { status: 500 })
-      }
     }
 
     const contentToSave = content || ""
@@ -108,11 +78,11 @@ export async function POST(request: NextRequest) {
       language: "en",
     }
 
-          // Add file metadata if provided (only for uploaded files like .txt, .md - docx disabled)
-      // This metadata helps with:
-      // 1. Displaying file type indicators in the UI
-      // 2. Tracking original file information
-      // 3. Potential future features like re-export or file history
+    // Add file metadata if provided (only for uploaded files like .txt, .md - docx disabled)
+    // This metadata helps with:
+    // 1. Displaying file type indicators in the UI
+    // 2. Tracking original file information
+    // 3. Potential future features like re-export or file history
     if (file_name) documentData.file_name = file_name
     if (file_size) documentData.file_size = file_size
     if (file_type) documentData.file_type = file_type
@@ -138,6 +108,10 @@ export async function POST(request: NextRequest) {
     console.log("Document created successfully:", document)
     return NextResponse.json({ document })
   } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required") {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+    }
+    
     console.error("Error in POST /api/documents:", error)
     return NextResponse.json(
       {

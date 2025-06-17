@@ -23,6 +23,11 @@ WordWise AI is a document management and writing assistance platform that suppor
 - **Progress Indicators**: Real-time feedback during file processing
 - **Content Extraction**: Preserves formatting and structure from source documents
 
+### 🔐 Authentication
+- **Clerk Authentication**: Secure user authentication with sign-in and sign-up
+- **Protected Routes**: Automatic redirection to login for unauthenticated users
+- **User Session Management**: Persistent user sessions across the application
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -53,9 +58,41 @@ WordWise AI is a document management and writing assistance platform that suppor
    pnpm install
    ```
 
-3. **Configure Environment**:
-   - Set up Supabase credentials in your environment variables
-   - Configure authentication settings
+3. **Configure Environment Variables**:
+   Create a `.env.local` file in the root directory with the following variables:
+   
+   ```bash
+   # Clerk Authentication
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key_here
+   CLERK_SECRET_KEY=sk_test_your_clerk_secret_key_here
+   
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+   ```
+
+4. **Set up Clerk Authentication**:
+   - Go to [dashboard.clerk.com](https://dashboard.clerk.com) and create a new application
+   - Copy your publishable key and secret key
+   - Replace the placeholder values in your `.env.local` file
+   - Configure your allowed redirect URLs in Clerk dashboard:
+     - Sign-in URL: `/sign-in`
+     - Sign-up URL: `/sign-up`
+     - After sign-in URL: `/`
+     - After sign-up URL: `/`
+
+5. **Set up Supabase** (if using):
+   - Configure Supabase credentials in your environment variables
+   - Set up your database schema using the provided SQL scripts in `/scripts`
+
+### Development
+
+```bash
+# Start the development server
+npm run dev
+
+# The app will be available at http://localhost:3000
+```
 
 ### Recent Updates
 

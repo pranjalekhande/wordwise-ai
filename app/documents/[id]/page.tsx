@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DocumentEditor } from "@/components/documents/document-editor"
+import { EnhancedDocumentEditor } from "@/components/documents/enhanced-document-editor"
 import type { Document } from "@/lib/types"
 
 export default function DocumentPage() {
@@ -75,7 +75,7 @@ export default function DocumentPage() {
 
   return (
     <div className="h-screen flex flex-col">
-      <DocumentEditor document={document} isNewDocument={isNewDocument} />
+      <EnhancedDocumentEditor document={document} isNewDocument={isNewDocument} />
     </div>
   )
 }

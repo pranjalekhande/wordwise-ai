@@ -102,3 +102,26 @@ export interface ReadabilityScore {
   level: string
   suggestions: string[]
 }
+
+export interface GrammarIssue {
+  id: string
+  type: "grammar" | "spelling" | "style"
+  severity: "low" | "medium" | "high"
+  message: string
+  start: number
+  end: number
+  originalText: string
+  suggestions: string[]
+  explanation?: string
+}
+
+export interface GrammarCheckResponse {
+  issues: GrammarIssue[]
+  correctedText?: string
+  summary: {
+    totalIssues: number
+    grammarIssues: number
+    spellingIssues: number
+    styleIssues: number
+  }
+}
