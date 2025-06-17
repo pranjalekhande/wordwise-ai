@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = createServerSupabaseClient()
     const userId = "demo-user-123"
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           voice_profile
         )
       `)
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", userId)
       .single()
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const { data: basicProject, error: basicError } = await supabase
         .from("carousel_projects")
         .select("*")
-        .eq("id", params.id)
+        .eq("id", id)
         .eq("user_id", userId)
         .single()
 
@@ -78,8 +79,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = createServerSupabaseClient()
     const userId = "demo-user-123"
 
@@ -95,7 +97,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         document_id: document_id || null,
         target_audience: target_audience || null,
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", userId)
       .select()
       .single()
@@ -112,12 +114,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = createServerSupabaseClient()
     const userId = "demo-user-123"
 
-    const { error } = await supabase.from("carousel_projects").delete().eq("id", params.id).eq("user_id", userId)
+    const { error } = await supabase.from("carousel_projects").delete().eq("id", id).eq("user_id", userId)
 
     if (error) {
       console.error("Error deleting project:", error)

@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const supabase = createServerSupabaseClient()
     const userId = "demo-user-123"
 
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const { data: project, error: projectError } = await supabase
       .from("carousel_projects")
       .select("id")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", userId)
       .single()
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const { data: slide, error } = await supabase
       .from("slides")
       .insert({
-        project_id: params.id,
+        project_id: id,
         slide_number: slide_number || 1,
         content: content || "",
         title: title || null,

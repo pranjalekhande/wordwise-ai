@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
+    
     // Temporarily disabled authentication
     // const { userId } = await auth()
     // if (!userId) {
@@ -24,7 +26,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           user_id
         )
       `)
-      .eq("id", params.id)
+      .eq("id", id)
       .single()
 
     if (slideError || slide.carousel_projects.user_id !== userId) {
@@ -38,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         char_count: content.length,
         tone,
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .select()
       .single()
 

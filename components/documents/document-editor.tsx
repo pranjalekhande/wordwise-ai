@@ -66,11 +66,23 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
             const generatedTitle = generateUntitledName(documents)
             setTitle(generatedTitle)
           } else {
-            setTitle("Untitled")
+            // Handle demo mode or API errors gracefully
+            try {
+              const responseData = await response.json()
+              if (responseData.error && responseData.error.includes("Demo mode")) {
+                setTitle("Untitled (Demo Mode)")
+                setError("Demo mode: Configure Supabase to enable saving documents")
+              } else {
+                setTitle("Untitled")
+              }
+            } catch (_error) {
+              setTitle("Untitled")
+            }
           }
         } catch (error) {
           console.error("Error fetching documents for title generation:", error)
           setTitle("Untitled")
+          setError("Unable to connect to database. Running in offline mode.")
         }
         setContent("")
         setCurrentDocumentId(null)
@@ -124,7 +136,7 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
     if (!currentDocumentId && !content.trim()) return false
 
     // For existing documents, save if either title or content has meaningful content
-    return title.trim().length > 0 && (content.trim().length > 0 || currentDocumentId)
+    return title.trim().length > 0 && (content.trim().length > 0 || Boolean(currentDocumentId))
   }
 
   const handleAutoSave = async () => {

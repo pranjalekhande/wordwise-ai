@@ -1,10 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
+    
     // Handle the "new" case - return empty response for new documents
-    if (params.id === "new") {
+    if (id === "new") {
       return NextResponse.json({ document: null })
     }
 
@@ -13,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const { data: document, error } = await supabase
       .from("documents")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", userId)
       .single()
 
@@ -29,10 +31,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
+    
     // Don't allow PUT on "new" - should use POST instead
-    if (params.id === "new") {
+    if (id === "new") {
       return NextResponse.json({ error: "Cannot update new document" }, { status: 400 })
     }
 
@@ -58,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         word_count: wordCount,
         char_count: charCount,
       })
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", userId)
       .select()
       .single()
@@ -75,16 +79,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
+    
     // Don't allow DELETE on "new"
-    if (params.id === "new") {
+    if (id === "new") {
       return NextResponse.json({ error: "Cannot delete new document" }, { status: 400 })
     }
 
     const userId = "demo-user-123"
 
-    const { error } = await supabase.from("documents").delete().eq("id", params.id).eq("user_id", userId)
+    const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", userId)
 
     if (error) {
       console.error("Error deleting document:", error)
