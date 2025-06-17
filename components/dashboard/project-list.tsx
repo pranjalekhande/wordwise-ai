@@ -104,10 +104,26 @@ export function ProjectList() {
     }
   }
 
-  const handleDocumentExport = (documentId: string, e: React.MouseEvent) => {
+  const handleDocumentExport = async (documentId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    // TODO: Implement export functionality
-    console.log("Export document:", documentId)
+    
+    try {
+      // Find the document in our recent documents list
+      const documentToExport = recentDocuments.find(doc => doc.id === documentId)
+      if (!documentToExport) {
+        console.error("Document not found for export")
+        return
+      }
+
+      // Import export utility dynamically
+      const { exportDocument } = await import("@/lib/export-utils")
+      
+      // For now, default to text export
+      // TODO: Add format selection dialog
+      exportDocument(documentToExport, 'txt')
+    } catch (error) {
+      console.error("Error exporting document:", error)
+    }
   }
 
   const getFileExtension = (fileName: string): string => {
