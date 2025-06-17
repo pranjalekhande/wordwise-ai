@@ -60,6 +60,10 @@ export function NewProjectDialog() {
     setIsLoading(true)
 
     try {
+      // Process template and document IDs properly
+      const processedTemplateId = templateId && templateId !== "none" ? templateId : null
+      const processedDocumentId = documentId && documentId !== "none" ? documentId : null
+
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: {
@@ -68,14 +72,15 @@ export function NewProjectDialog() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
-          template_id: templateId || null,
-          document_id: documentId || null,
+          template_id: processedTemplateId,
+          document_id: processedDocumentId,
           target_audience: targetAudience.trim() || null,
         }),
       })
 
       if (!response.ok) {
-        throw new Error("Failed to create project")
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        throw new Error(errorData.error || `Failed to create project (${response.status})`)
       }
 
       const { project } = await response.json()
@@ -92,6 +97,8 @@ export function NewProjectDialog() {
       router.push(`/editor/${project.id}`)
     } catch (error) {
       console.error("Error creating project:", error)
+      // Show error to user - you could add a toast notification here
+      alert(`Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
