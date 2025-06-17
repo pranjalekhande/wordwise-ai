@@ -522,7 +522,13 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
             <div className="max-w-4xl mx-auto relative">
               {/* Background highlights for grammar issues */}
               {grammarCheckEnabled && issues.length > 0 && (
-                <div className="absolute inset-0 pointer-events-none z-0">
+                <div className="absolute inset-0 pointer-events-none z-0" style={{
+                  top: '0',
+                  left: '0',
+                  right: '0',
+                  bottom: '0',
+                  position: 'absolute'
+                }}>
                   <GrammarHighlight
                     text={content}
                     issues={issues}
@@ -539,6 +545,25 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Type or paste (⌘+V) your text here or upload a document."
                 className="min-h-[600px] border-none resize-none text-base leading-relaxed focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent relative z-10"
+                style={{
+                  fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Menlo, Consolas, "Liberation Mono", "Courier New", monospace',
+                  fontSize: '1rem',
+                  lineHeight: '1.625',
+                  padding: '0',
+                  margin: '0',
+                  border: 'none',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  width: '100%',
+                  wordWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'break-word',
+                  textRendering: 'optimizeSpeed',
+                  fontVariantLigatures: 'none',
+                  fontKerning: 'none',
+                  letterSpacing: '0',
+                  wordSpacing: '0'
+                }}
               />
 
               {content.length === 0 && (

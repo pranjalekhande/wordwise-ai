@@ -11,17 +11,39 @@ interface GrammarHighlightProps {
   className?: string
 }
 
-const getSeverityHighlight = (severity: GrammarIssue["severity"]) => {
-  switch (severity) {
-    case "high":
-      return "border-b-2 border-red-500"
-    case "medium":
-      return "border-b-2 border-orange-400"
-    case "low":
-      return "border-b-1 border-blue-400"
-    default:
-      return "border-b-2 border-red-500"
+const getSeverityHighlight = (issue: GrammarIssue) => {
+  const { severity, type } = issue
+  
+  // Style suggestions get background highlighting
+  if (type === "style") {
+    switch (severity) {
+      case "high":
+        return "bg-blue-200/80 border-b-1 border-blue-500 rounded-sm px-0.5"
+      case "medium":
+        return "bg-blue-100/70 border-b-1 border-blue-400 rounded-sm px-0.5"
+      case "low":
+        return "bg-blue-100/50 border-b-1 border-blue-300 rounded-sm px-0.5"
+      default:
+        return "bg-blue-100/70 border-b-1 border-blue-400 rounded-sm px-0.5"
+    }
   }
+  
+  // Only spelling errors get underlines
+  if (type === "spelling") {
+    switch (severity) {
+      case "high":
+        return "border-b-2 border-red-500"
+      case "medium":
+        return "border-b-2 border-orange-400"
+      case "low":
+        return "border-b-1 border-yellow-400"
+      default:
+        return "border-b-2 border-red-500"
+    }
+  }
+  
+  // Grammar errors - no highlighting
+  return ""
 }
 
 export function GrammarHighlight({
@@ -31,18 +53,20 @@ export function GrammarHighlight({
   onDismissIssue,
   className = ""
 }: GrammarHighlightProps) {
-  // Sort issues by start position to handle overlapping correctly
-  const sortedIssues = [...issues].sort((a, b) => a.start - b.start)
+  // Filter to only spelling and style issues, sort by start position
+  const relevantIssues = issues
+    .filter(issue => issue.type === "spelling" || issue.type === "style")
+    .sort((a, b) => a.start - b.start)
 
   const renderHighlightedText = () => {
-    if (sortedIssues.length === 0) {
+    if (relevantIssues.length === 0) {
       return <span className="whitespace-pre-wrap">{text}</span>
     }
 
     const elements: React.ReactElement[] = []
     let lastIndex = 0
 
-    sortedIssues.forEach((issue, index) => {
+    relevantIssues.forEach((issue, index) => {
       // Add text before the issue
       if (issue.start > lastIndex) {
         elements.push(
@@ -52,11 +76,11 @@ export function GrammarHighlight({
         )
       }
 
-      // Add the highlighted issue - simple underline only
+      // Add the highlighted issue - spelling gets underlines, style gets background
       elements.push(
         <span
           key={issue.id}
-          className={`${getSeverityHighlight(issue.severity)} whitespace-pre-wrap`}
+          className={`${getSeverityHighlight(issue)} whitespace-pre-wrap`}
           title={`${issue.type}: ${issue.message}`}
         >
           {text.substring(issue.start, issue.end)}
@@ -81,16 +105,28 @@ export function GrammarHighlight({
   return (
     <div className={`${className}`}>
       <div 
-        className="min-h-[600px] text-base leading-relaxed whitespace-pre-wrap"
+        className="min-h-[600px] text-base leading-relaxed whitespace-pre-wrap border-none resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent"
         style={{
-          fontFamily: 'inherit',
+          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Menlo, Consolas, "Liberation Mono", "Courier New", monospace',
           fontSize: '1rem',
           lineHeight: '1.625',
-          padding: 0,
-          margin: 0,
+          padding: '0',
+          margin: '0',
+          border: 'none',
+          outline: 'none',
+          boxSizing: 'border-box',
           color: 'transparent',
           userSelect: 'none',
           pointerEvents: 'none',
+          width: '100%',
+          wordWrap: 'break-word',
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'break-word',
+          textRendering: 'optimizeSpeed',
+          fontVariantLigatures: 'none',
+          fontKerning: 'none',
+          letterSpacing: '0',
+          wordSpacing: '0'
         }}
       >
         {renderHighlightedText()}
