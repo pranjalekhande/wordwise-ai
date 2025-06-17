@@ -187,22 +187,61 @@ export function useGrammarCheck(options: UseGrammarCheckOptions = {}) {
     const issue = issues.find(i => i.id === issueId)
     if (!issue) return text
 
-    const before = text.substring(0, issue.start)
-    const after = text.substring(issue.end)
-    const newText = before + suggestion + after
+    // Use the originalText to find and replace instead of relying on positions
+    const originalText = issue.originalText
+    if (!originalText) {
+      console.warn("No originalText found for issue:", issue)
+      return text
+    }
 
-    // Clear all issues immediately to prevent UI confusion
-    setIssues([])
-    setSummary({
-      totalIssues: 0,
-      grammarIssues: 0,
-      spellingIssues: 0,
-      styleIssues: 0
-    })
+    // Find the first occurrence of the original text
+    const startIndex = text.indexOf(originalText)
+    if (startIndex === -1) {
+      // If exact match not found, try to find a close match with some tolerance
+      const words = originalText.trim().split(/\s+/)
+      if (words.length === 1) {
+        // Single word - try case-insensitive search
+        const regex = new RegExp(`\\b${words[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')
+        const match = text.match(regex)
+        if (match) {
+          const matchStart = text.indexOf(match[0])
+          const newText = text.substring(0, matchStart) + suggestion + text.substring(matchStart + match[0].length)
+          
+          // Remove this issue from the list
+          setIssues(prev => prev.filter(i => i.id !== issueId))
+          setSummary(prev => ({
+            ...prev,
+            totalIssues: prev.totalIssues - 1,
+            grammarIssues: issue.type === 'grammar' ? prev.grammarIssues - 1 : prev.grammarIssues,
+            spellingIssues: issue.type === 'spelling' ? prev.spellingIssues - 1 : prev.spellingIssues,
+            styleIssues: issue.type === 'style' ? prev.styleIssues - 1 : prev.styleIssues
+          }))
+          
+          return newText
+        }
+      }
+      
+      console.warn("Original text not found in document:", originalText)
+      console.warn("Document text sample:", text.substring(Math.max(0, issue.start - 20), issue.start + 50))
+      return text
+    }
 
-    // Reset last checked text so next check will be more likely to trigger
-    lastCheckedTextRef.current = ""
+    // Replace the found text with the suggestion
+    const newText = text.substring(0, startIndex) + suggestion + text.substring(startIndex + originalText.length)
 
+    // Remove this specific issue from the list and update summary
+    setIssues(prev => prev.filter(i => i.id !== issueId))
+    setSummary(prev => ({
+      ...prev,
+      totalIssues: prev.totalIssues - 1,
+      grammarIssues: issue.type === 'grammar' ? prev.grammarIssues - 1 : prev.grammarIssues,
+      spellingIssues: issue.type === 'spelling' ? prev.spellingIssues - 1 : prev.spellingIssues,
+      styleIssues: issue.type === 'style' ? prev.styleIssues - 1 : prev.styleIssues
+    }))
+
+    // Don't reset all issues, just this one
+    // The remaining issues should still be valid for the new text
+    
     return newText
   }, [issues])
 
