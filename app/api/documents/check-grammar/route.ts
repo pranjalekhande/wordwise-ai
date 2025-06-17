@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Create a prompt for grammar and spell checking
     const prompt = `
-You are a professional writing assistant. Analyze the following text for grammar, spelling, and style issues. 
+You are a professional writing assistant. Analyze the following text ONLY for grammar, spelling, and style issues. 
 
 Text to analyze:
 "${text}"
@@ -62,7 +62,7 @@ Please provide a JSON response with the following structure:
       "message": "Brief description of the issue",
       "start": number (character position),
       "end": number (character position),
-      "originalText": "text with issue",
+      "originalText": "exact text with issue",
       "suggestions": ["suggestion1", "suggestion2"],
       "explanation": "Optional detailed explanation"
     }
@@ -76,14 +76,54 @@ Please provide a JSON response with the following structure:
   }
 }
 
-Rules:
-1. Find all grammar, spelling, and style issues
-2. Provide accurate character positions for start and end
-3. Give 1-3 suggestions for each issue
-4. Use clear, concise messages
-5. Only suggest improvements that genuinely enhance the text
-6. Be conservative with style suggestions - focus on clarity and correctness
-7. Return valid JSON only
+CRITICAL CLASSIFICATION RULES:
+
+**GRAMMAR issues** (type: "grammar") - ONLY these types:
+- Subject-verb disagreement (e.g., "He don't" → "He doesn't")
+- Incorrect verb tenses (e.g., "I have went" → "I have gone")
+- Wrong pronoun usage (e.g., "Me and him" → "He and I")
+- Article errors (e.g., "a apple" → "an apple")
+- Preposition mistakes (e.g., "different than" → "different from")
+- Comma splices and run-on sentences
+- Incorrect word forms (e.g., "good" vs "well")
+
+**SPELLING issues** (type: "spelling") - ONLY these:
+- Misspelled words (e.g., "ultiple" → "multiple")
+- Typos (e.g., "teh" → "the")
+- Wrong word entirely due to spelling (e.g., "there" vs "their")
+
+**STYLE issues** (type: "style") - Everything else including:
+- Sentence fragments
+- Unclear or awkward phrasing
+- Wordiness or redundancy
+- Passive voice suggestions
+- Tone or clarity improvements
+- Word choice recommendations
+- Flow and readability suggestions
+
+IMPORTANT: 
+- If it's about sentence structure, clarity, or readability → type: "style"
+- If it's about correct grammar rules → type: "grammar"  
+- If it's a misspelled word → type: "spelling"
+- Be VERY conservative with grammar classification
+- Most "consider rephrasing" suggestions should be "style"
+- Sentence fragments are "style", not "grammar"
+
+OTHER RULES:
+1. The "originalText" field MUST contain the EXACT text from the document
+2. For spelling: only the misspelled word
+3. For grammar: the specific phrase with the error
+4. For style: the phrase that could be improved
+5. Calculate positions by counting from start (0-based)
+6. Ensure positions exactly match "originalText"
+7. Give 1-3 suggestions per issue
+8. Use clear, concise messages
+9. Return valid JSON only
+
+Examples:
+- Text: "He don't like it" → type: "grammar", originalText: "don't", suggestions: ["doesn't"]
+- Text: "I have ultiple cats" → type: "spelling", originalText: "ultiple", suggestions: ["multiple"]
+- Text: "Which is good." → type: "style", originalText: "Which is good.", suggestions: ["This is good."]
 `
 
     const completion = await openai.chat.completions.create({
@@ -114,11 +154,125 @@ Rules:
       // Parse the JSON response from OpenAI
       const grammarCheckResult: GrammarCheckResponse = JSON.parse(responseContent)
       
-      // Add unique IDs if not provided
-      grammarCheckResult.issues = grammarCheckResult.issues.map((issue, index) => ({
-        ...issue,
-        id: issue.id || `issue-${index}`
-      }))
+      // Validate and fix issues
+      grammarCheckResult.issues = grammarCheckResult.issues
+        .map((issue, index) => {
+          // Add unique ID if not provided
+          const validatedIssue = {
+            ...issue,
+            id: issue.id || `issue-${index}`
+          }
+
+          // Reclassify issues that were incorrectly categorized
+          const message = issue.message.toLowerCase()
+          
+          // Style indicators that should NOT be grammar
+          const styleIndicators = [
+            'sentence fragment',
+            'consider rephrasing',
+            'unclear',
+            'awkward',
+            'wordy',
+            'passive voice',
+            'flow',
+            'readability',
+            'clarity',
+            'tone',
+            'word choice',
+            'redundant',
+            'verbose',
+            'concise',
+            'better to',
+            'might be better',
+            'could be improved',
+            'consider using',
+            'sounds better',
+            'more natural'
+          ]
+          
+          // If marked as grammar but contains style indicators, reclassify as style
+          if (issue.type === 'grammar' && styleIndicators.some(indicator => message.includes(indicator))) {
+            console.log(`Reclassifying "${issue.message}" from grammar to style`)
+            validatedIssue.type = 'style'
+          }
+          
+          // Grammar indicators that should stay as grammar
+          const grammarIndicators = [
+            'subject-verb',
+            'verb tense',
+            'pronoun',
+            'article',
+            'preposition',
+            'comma splice',
+            'run-on',
+            'agreement',
+            'conjugation',
+            'should be',
+            'incorrect use of',
+            'wrong form'
+          ]
+          
+          // If marked as style but contains grammar indicators, reclassify as grammar
+          if (issue.type === 'style' && grammarIndicators.some(indicator => message.includes(indicator))) {
+            console.log(`Reclassifying "${issue.message}" from style to grammar`)
+            validatedIssue.type = 'grammar'
+          }
+
+          // Validate that originalText matches the text at the specified positions
+          if (issue.start >= 0 && issue.end > issue.start && issue.end <= text.length) {
+            const textAtPosition = text.substring(issue.start, issue.end)
+            
+            // If originalText doesn't match the position, try to find the correct text
+            if (issue.originalText && issue.originalText !== textAtPosition) {
+              console.warn(`Position mismatch for issue ${validatedIssue.id}:`)
+              console.warn(`Expected: "${issue.originalText}"`)
+              console.warn(`Found at position: "${textAtPosition}"`)
+              
+              // Try to find the originalText in the document
+              const correctIndex = text.indexOf(issue.originalText)
+              if (correctIndex !== -1) {
+                validatedIssue.start = correctIndex
+                validatedIssue.end = correctIndex + issue.originalText.length
+                console.warn(`Corrected positions: ${validatedIssue.start}-${validatedIssue.end}`)
+              } else {
+                // If we can't find the originalText, use the text at the given position
+                console.warn(`Using text at position instead: "${textAtPosition}"`)
+                validatedIssue.originalText = textAtPosition
+              }
+            } else if (!issue.originalText) {
+              // If no originalText provided, use the text at the position
+              validatedIssue.originalText = textAtPosition
+            }
+          } else {
+            // Invalid positions, try to find the originalText
+            if (issue.originalText) {
+              const correctIndex = text.indexOf(issue.originalText)
+              if (correctIndex !== -1) {
+                validatedIssue.start = correctIndex
+                validatedIssue.end = correctIndex + issue.originalText.length
+              } else {
+                console.warn(`Invalid positions and originalText not found for issue ${validatedIssue.id}`)
+                return null // Filter out this issue
+              }
+            } else {
+              console.warn(`Invalid positions and no originalText for issue ${validatedIssue.id}`)
+              return null // Filter out this issue
+            }
+          }
+
+          return validatedIssue
+        })
+        .filter(Boolean) as GrammarIssue[] // Remove null issues
+
+      // Recalculate summary based on corrected classifications
+      const correctedSummary = {
+        totalIssues: grammarCheckResult.issues.length,
+        grammarIssues: grammarCheckResult.issues.filter(issue => issue.type === 'grammar').length,
+        spellingIssues: grammarCheckResult.issues.filter(issue => issue.type === 'spelling').length,
+        styleIssues: grammarCheckResult.issues.filter(issue => issue.type === 'style').length
+      }
+      
+      grammarCheckResult.summary = correctedSummary
 
       return NextResponse.json(grammarCheckResult)
     } catch (parseError) {

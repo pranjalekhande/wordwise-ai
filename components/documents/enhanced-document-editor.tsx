@@ -502,9 +502,8 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
                   </Button>
                   {summary.totalIssues > 0 && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{summary.grammarIssues} grammar,</span>
-                      <span>{summary.spellingIssues} spelling,</span>
-                      <span>{summary.styleIssues} style issues</span>
+                      <span>{summary.grammarIssues + summary.spellingIssues} grammar & spelling,</span>
+                      <span>{summary.styleIssues} paraphrase suggestions</span>
                     </div>
                   )}
                   <div className="text-xs text-muted-foreground">
@@ -557,7 +556,7 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
 
         {/* Right Sidebar */}
         <div className="w-80 border-l bg-muted/30 p-4 space-y-4 overflow-auto">
-          {/* Grammar Summary */}
+          {/* Grammar & Spelling Check */}
           {grammarCheckEnabled && (
             <Card>
               <CardHeader className="pb-3">
@@ -572,64 +571,147 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Checking grammar...
                   </div>
-                ) : summary.totalIssues > 0 ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Issues found:</span>
-                      <span className="font-medium">{summary.totalIssues}</span>
-                    </div>
-                    
-                    {/* Individual Issues */}
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {issues.slice(0, 5).map((issue) => (
-                        <div key={issue.id} className="p-2 border rounded-sm bg-muted/30">
-                          <div className="flex items-start justify-between mb-1">
-                            <span className="text-xs font-medium capitalize text-muted-foreground">
-                              {issue.type}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-4 w-4 p-0"
-                              onClick={() => dismissIssue(issue.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            "{content.substring(issue.start, issue.end)}"
-                          </p>
-                          <p className="text-xs mb-2">{issue.message}</p>
-                          {issue.suggestions.length > 0 && (
-                            <div className="space-y-1">
-                              {issue.suggestions.slice(0, 2).map((suggestion, idx) => (
-                                <Button
-                                  key={idx}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 w-full text-xs justify-start"
-                                  onClick={() => handleApplySuggestion(issue.id, suggestion)}
-                                >
-                                  "{suggestion}"
-                                </Button>
-                              ))}
+                ) : (() => {
+                  const grammarSpellingIssues = issues.filter(issue => issue.type === "grammar" || issue.type === "spelling")
+                  return grammarSpellingIssues.length > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Issues found:</span>
+                        <span className="font-medium">{grammarSpellingIssues.length}</span>
+                      </div>
+                      
+                      {/* Individual Issues */}
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {grammarSpellingIssues.slice(0, 5).map((issue) => (
+                          <div key={issue.id} className="p-2 border rounded-sm bg-muted/30">
+                            <div className="flex items-start justify-between mb-1">
+                              <span className="text-xs font-medium capitalize text-muted-foreground">
+                                {issue.type}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0"
+                                onClick={() => dismissIssue(issue.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                      {issues.length > 5 && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          +{issues.length - 5} more issues
-                        </p>
-                      )}
+                            <p className="text-xs text-muted-foreground mb-2">
+                              "{content.substring(issue.start, issue.end)}"
+                            </p>
+                            <p className="text-xs mb-2">{issue.message}</p>
+                            {issue.suggestions.length > 0 && (
+                              <div className="space-y-1">
+                                {issue.suggestions.slice(0, 2).map((suggestion, idx) => (
+                                  <Button
+                                    key={idx}
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-full text-xs justify-start"
+                                    onClick={() => handleApplySuggestion(issue.id, suggestion)}
+                                  >
+                                    "{suggestion}"
+                                  </Button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {grammarSpellingIssues.length > 5 && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            +{grammarSpellingIssues.length - 5} more issues
+                          </p>
+                        )}
+                      </div>
                     </div>
+                  ) : content.length > 10 ? (
+                    <div className="text-sm text-green-600 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      No grammar or spelling issues found
+                    </div>
+                  ) : null
+                })()}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Consider Paraphrase (Style Issues) */}
+          {grammarCheckEnabled && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Consider Paraphrase
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isChecking ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Analyzing style...
                   </div>
-                ) : content.length > 10 ? (
-                  <div className="text-sm text-green-600 flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" />
-                    No issues found
-                  </div>
-                ) : null}
+                ) : (() => {
+                  const styleIssues = issues.filter(issue => issue.type === "style")
+                  return styleIssues.length > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Suggestions:</span>
+                        <span className="font-medium">{styleIssues.length}</span>
+                      </div>
+                      
+                      {/* Individual Style Issues */}
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {styleIssues.slice(0, 5).map((issue) => (
+                          <div key={issue.id} className="p-2 border rounded-sm bg-blue-50/50 border-blue-200">
+                            <div className="flex items-start justify-between mb-1">
+                              <span className="text-xs font-medium text-blue-600">
+                                Style Suggestion
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0"
+                                onClick={() => dismissIssue(issue.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              "{content.substring(issue.start, issue.end)}"
+                            </p>
+                            <p className="text-xs mb-2 text-blue-700">{issue.message}</p>
+                            {issue.suggestions.length > 0 && (
+                              <div className="space-y-1">
+                                {issue.suggestions.slice(0, 2).map((suggestion, idx) => (
+                                  <Button
+                                    key={idx}
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 w-full text-xs justify-start border-blue-200 text-blue-700 hover:bg-blue-50"
+                                    onClick={() => handleApplySuggestion(issue.id, suggestion)}
+                                  >
+                                    "{suggestion}"
+                                  </Button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {styleIssues.length > 5 && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            +{styleIssues.length - 5} more suggestions
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : content.length > 10 ? (
+                    <div className="text-sm text-green-600 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      No style suggestions
+                    </div>
+                  ) : null
+                })()}
               </CardContent>
             </Card>
           )}
