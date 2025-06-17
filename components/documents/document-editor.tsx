@@ -123,7 +123,7 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
         clearTimeout(autoSaveTimeoutRef.current)
       }
     }
-  }, [content, title, isInitialized])
+  }, [content, title, isInitialized, hasUnsavedChanges, currentDocumentId])
 
   const shouldAutoSave = (): boolean => {
     // Don't auto-save if no unsaved changes
@@ -204,6 +204,35 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
     await handleAutoSave()
   }
 
+  const handleDocumentExport = async () => {
+    try {
+      // Create a document object from current state
+      const currentDocument: Document = {
+        id: currentDocumentId || 'temp-id',
+        user_id: 'demo-user-123',
+        title: title.trim() || 'Untitled',
+        content: content,
+        word_count: wordCount,
+        char_count: charCount,
+        language: 'en',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...(document?.file_name && { file_name: document.file_name }),
+        ...(document?.file_size && { file_size: document.file_size }),
+        ...(document?.file_type && { file_type: document.file_type })
+      }
+
+      // Import export utility dynamically
+      const { exportDocument } = await import("@/lib/export-utils")
+      
+      // Export as text format
+      exportDocument(currentDocument, 'txt')
+    } catch (error) {
+      console.error("Error exporting document:", error)
+      setError("Failed to export document")
+    }
+  }
+
   const readabilityScore = calculateReadabilityScore(content)
   const dailyGoal = 500 // This could come from user settings
   const goalProgress = Math.min(100, (wordCount / dailyGoal) * 100)
@@ -281,7 +310,7 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDocumentExport}>
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </DropdownMenuItem>

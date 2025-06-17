@@ -67,6 +67,27 @@ export function DocumentsList() {
     }
   }
 
+  const handleDocumentExport = async (documentId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    try {
+      // Find the document in our documents list
+      const documentToExport = documents.find(doc => doc.id === documentId)
+      if (!documentToExport) {
+        console.error("Document not found for export")
+        return
+      }
+
+      // Import export utility dynamically
+      const { exportDocument } = await import("@/lib/export-utils")
+      
+      // Export as text format
+      exportDocument(documentToExport, 'txt')
+    } catch (error) {
+      console.error("Error exporting document:", error)
+    }
+  }
+
   const getFileExtension = (fileName: string): string => {
     const extension = fileName.split('.').pop()?.toUpperCase()
     return extension || 'FILE'
@@ -176,7 +197,7 @@ export function DocumentsList() {
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => handleDocumentExport(document.id, e)}>
                       <Download className="h-4 w-4 mr-2" />
                       Export
                     </DropdownMenuItem>
