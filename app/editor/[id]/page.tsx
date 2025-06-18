@@ -38,7 +38,7 @@ export default function EditorPage() {
       }
     } catch (error) {
       console.error("Error fetching project:", error)
-      setError("Failed to load project")
+                setError("Failed to load carousel")
     } finally {
       setIsLoading(false)
     }
@@ -49,7 +49,7 @@ export default function EditorPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading project...</span>
+          <span>Loading carousel...</span>
         </div>
       </div>
     )
@@ -58,8 +58,8 @@ export default function EditorPage() {
   if (error || !currentProject) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <h2 className="text-xl font-semibold">Project not found</h2>
-        <p className="text-muted-foreground">{error || "The project you're looking for doesn't exist."}</p>
+        <h2 className="text-xl font-semibold">Carousel not found</h2>
+        <p className="text-muted-foreground">{error || "The carousel you're looking for doesn't exist."}</p>
         <Button onClick={() => router.push("/")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard

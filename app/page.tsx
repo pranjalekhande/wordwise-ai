@@ -72,7 +72,7 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              New Project
+              New InstaCarousel
             </CardTitle>
           </CardHeader>
           <CardContent>

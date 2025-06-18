@@ -48,7 +48,7 @@ export async function GET() {
 
       // Manually fetch slides for each project
       const projectsWithSlides = await Promise.all(
-        (basicProjects || []).map(async (project) => {
+        (basicProjects || []).map(async (project: any) => {
           const { data: slides } = await supabase
             .from("slides")
             .select("id, slide_number, content, char_count, tone, created_at, updated_at")
@@ -96,10 +96,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 })
     }
 
-    const { title, description, template_id, document_id, target_audience } = body
+    const { title, description, source_text, template_type, slide_count, template_id, document_id, target_audience } = body
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json({ error: "Title is required and must be a non-empty string" }, { status: 400 })
+    }
+
+    // Validate source_text if provided
+    if (source_text && (typeof source_text !== 'string' || source_text.trim().length < 50)) {
+      return NextResponse.json({ error: "Source text must be at least 50 characters long" }, { status: 400 })
+    }
+
+    // Validate template_type if provided
+    if (template_type && !['NEWS', 'STORY', 'PRODUCT'].includes(template_type)) {
+      return NextResponse.json({ error: "Template type must be NEWS, STORY, or PRODUCT" }, { status: 400 })
+    }
+
+    // Validate slide_count if provided
+    if (slide_count && (typeof slide_count !== 'number' || slide_count < 3 || slide_count > 10)) {
+      return NextResponse.json({ error: "Slide count must be between 3 and 10" }, { status: 400 })
     }
 
     // Validate optional foreign key references
@@ -111,9 +126,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "document_id must be a string" }, { status: 400 })
     }
 
+    // Store source_text in description if provided (temporary solution)
+    const finalDescription = source_text ? `${source_text}\n\n---\n\n${description || ''}`.trim() : (description || null)
+
     console.log("Creating project for user:", userId, "with data:", {
       title: title.trim(),
-      description: description || null,
+      description: finalDescription,
+      template_type: template_type || 'STORY',
       template_id: template_id || null,
       document_id: document_id || null,
       target_audience: target_audience || null,
@@ -125,7 +144,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         title: title.trim(),
-        description: description || null,
+        description: finalDescription,
         template_id: template_id || null,
         document_id: document_id || null,
         target_audience: target_audience || null,
@@ -162,18 +181,23 @@ export async function POST(request: NextRequest) {
 
     console.log("Project created successfully:", project.id)
 
-    // Create initial slide
-    const { error: slideError } = await supabase.from("slides").insert({
+    // Create initial slides based on slide_count
+    const numberOfSlides = slide_count || 5
+    const slidesToCreate = Array.from({ length: numberOfSlides }, (_, index) => ({
       project_id: project.id,
-      slide_number: 1,
-      content: "",
+      slide_number: index + 1,
+      content: source_text && index === 0 ? `Generated from: ${template_type || 'STORY'} template\n\n[Slide content will be generated here]` : "",
       char_count: 0,
-    })
+    }))
+
+    const { error: slideError } = await supabase.from("slides").insert(slidesToCreate)
 
     if (slideError) {
-      console.error("Error creating initial slide:", slideError)
-      // Note: Project was created but slide failed - this is a warning, not a complete failure
+      console.error("Error creating initial slides:", slideError)
+      // Note: Project was created but slides failed - this is a warning, not a complete failure
       console.warn("Project created but initial slide creation failed. User can add slides manually.")
+    } else {
+      console.log(`Created ${numberOfSlides} initial slides for project ${project.id}`)
     }
 
     return NextResponse.json({ project })

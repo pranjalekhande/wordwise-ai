@@ -26,6 +26,9 @@ export function NewProjectDialog() {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
+  const [sourceText, setSourceText] = useState("")
+  const [templateType, setTemplateType] = useState<string>("STORY")
+  const [slideCount, setSlideCount] = useState<number>(5)
   const [templateId, setTemplateId] = useState<string>("")
   const [documentId, setDocumentId] = useState<string>("")
   const [targetAudience, setTargetAudience] = useState("")
@@ -33,6 +36,13 @@ export function NewProjectDialog() {
   const [documents, setDocuments] = useState<Document[]>([])
   const { templates, addProject } = useAppStore()
   const router = useRouter()
+
+  // Template type options
+  const templateTypes = [
+    { value: "STORY", label: "Story", description: "Personal stories, case studies, journeys" },
+    { value: "NEWS", label: "News", description: "Breaking news, announcements, updates" },
+    { value: "PRODUCT", label: "Product", description: "Product launches, features, marketing" }
+  ]
 
   useEffect(() => {
     if (open) {
@@ -56,6 +66,10 @@ export function NewProjectDialog() {
     e.preventDefault()
 
     if (!title.trim()) return
+    if (sourceText.trim().length < 50) {
+      alert("Source text must be at least 50 characters long")
+      return
+    }
 
     setIsLoading(true)
 
@@ -72,6 +86,9 @@ export function NewProjectDialog() {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
+          source_text: sourceText.trim(),
+          template_type: templateType,
+          slide_count: slideCount,
           template_id: processedTemplateId,
           document_id: processedDocumentId,
           target_audience: targetAudience.trim() || null,
@@ -89,6 +106,9 @@ export function NewProjectDialog() {
       setOpen(false)
       setTitle("")
       setDescription("")
+      setSourceText("")
+      setTemplateType("STORY")
+      setSlideCount(5)
       setTemplateId("")
       setDocumentId("")
       setTargetAudience("")
@@ -109,27 +129,83 @@ export function NewProjectDialog() {
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          New Project
+          New InstaCarousel
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
+            <DialogTitle>Create New InstaCarousel</DialogTitle>
             <DialogDescription>
-              Create a new Instagram carousel project with optional document and template.
+              Create a new Instagram carousel from your content. Paste your text, choose a template type, and let AI generate your slides.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Project Title</Label>
+              <Label htmlFor="title">InstaCarousel Title</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter project title..."
+                placeholder="Enter carousel title..."
                 required
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="source-text">
+                Source Text <span className="text-red-500">*</span>
+                <span className="ml-2 text-sm text-muted-foreground">({sourceText.length}/50 min)</span>
+              </Label>
+              <Textarea
+                id="source-text"
+                value={sourceText}
+                onChange={(e) => setSourceText(e.target.value)}
+                placeholder="Paste your content here (minimum 50 characters)..."
+                className="h-32 resize-none"
+                required
+              />
+              {sourceText.length > 0 && sourceText.length < 50 && (
+                <p className="text-sm text-red-500">
+                  Need {50 - sourceText.length} more characters (minimum 50 required)
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="template-type">Template Type</Label>
+                <Select value={templateType} onValueChange={setTemplateType}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templateTypes.map((template) => (
+                      <SelectItem key={template.value} value={template.value}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{template.label}</span>
+                          <span className="text-xs text-muted-foreground">{template.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Choose content structure</p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="slide-count">Number of Slides</Label>
+                <Input
+                  id="slide-count"
+                  type="number"
+                  min="3"
+                  max="10"
+                  value={slideCount}
+                  onChange={(e) => setSlideCount(Number(e.target.value))}
+                  className="w-full h-10"
+                />
+                <p className="text-xs text-muted-foreground">Recommended: 5-7 slides</p>
+              </div>
             </div>
 
             <div className="grid gap-2">
@@ -191,9 +267,9 @@ export function NewProjectDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!title.trim() || isLoading}>
+            <Button type="submit" disabled={!title.trim() || sourceText.trim().length < 50 || isLoading}>
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Project
+              Create Carousel
             </Button>
           </DialogFooter>
         </form>

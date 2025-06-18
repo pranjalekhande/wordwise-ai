@@ -70,7 +70,7 @@ export function ProjectList() {
   const handleDelete = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
 
-    if (!confirm("Are you sure you want to delete this project?")) return
+    if (!confirm("Are you sure you want to delete this carousel?")) return
 
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
@@ -138,8 +138,8 @@ export function ProjectList() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Projects</h1>
-            <p className="text-muted-foreground">Manage your Instagram carousel projects</p>
+                    <h1 className="text-3xl font-bold">InstaCarousels</h1>
+        <p className="text-muted-foreground">Manage your Instagram carousels</p>
           </div>
           <div className="flex items-center gap-2">
             <DocumentUpload onDocumentCreated={fetchRecentDocuments} />
@@ -151,7 +151,7 @@ export function ProjectList() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search projects..."
+              placeholder="Search carousels..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -218,9 +218,9 @@ export function ProjectList() {
         {filteredProjects.length === 0 && (
           <div className="text-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+            <h3 className="text-lg font-semibold mb-2">No carousels found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery ? "Try adjusting your search terms" : "Create your first Instagram carousel project"}
+              {searchQuery ? "Try adjusting your search terms" : "Create your first Instagram carousel"}
             </p>
             <NewProjectDialog />
           </div>
