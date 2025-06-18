@@ -228,14 +228,16 @@ export function NewProjectDialog({
                 <Label htmlFor="template-type">Template Type</Label>
                 <Select value={templateType} onValueChange={setTemplateType}>
                   <SelectTrigger className="h-10">
-                    <SelectValue />
+                    <SelectValue>
+                      {templateTypes.find(t => t.value === templateType)?.label || "Select template"}
+                    </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-[280px]">
                     {templateTypes.map((template) => (
-                      <SelectItem key={template.value} value={template.value}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{template.label}</span>
-                          <span className="text-xs text-muted-foreground">{template.description}</span>
+                      <SelectItem key={template.value} value={template.value} className="py-3">
+                        <div className="flex flex-col gap-1 w-full">
+                          <span className="font-medium text-sm">{template.label}</span>
+                          <span className="text-xs text-muted-foreground leading-tight break-words">{template.description}</span>
                         </div>
                       </SelectItem>
                     ))}

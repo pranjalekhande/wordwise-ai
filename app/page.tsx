@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { ProjectList } from "@/components/dashboard/project-list"
+import { NewProjectDialog } from "@/components/dashboard/new-project-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Plus, TrendingUp, Target, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const router = useRouter()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [carouselDialogOpen, setCarouselDialogOpen] = useState(false)
 
   useEffect(() => {
     fetchUserStats()
@@ -49,7 +51,7 @@ export default function Dashboard() {
   }
 
   const handleNewProject = () => {
-    router.push("/projects")
+    setCarouselDialogOpen(true)
   }
 
   return (
@@ -128,6 +130,12 @@ export default function Dashboard() {
       </div>
 
       <ProjectList />
+
+      {/* New InstaCarousel Dialog */}
+      <NewProjectDialog 
+        isOpen={carouselDialogOpen}
+        onOpenChange={setCarouselDialogOpen}
+      />
     </div>
   )
 }
