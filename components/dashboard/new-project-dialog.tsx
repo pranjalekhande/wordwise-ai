@@ -67,6 +67,7 @@ export function NewProjectDialog({
   const [documentId, setDocumentId] = useState<string>(preFilledDocumentId || "")
   const [targetAudience, setTargetAudience] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingStage, setLoadingStage] = useState<string>("")
   const [documents, setDocuments] = useState<Document[]>([])
   const { templates, addProject } = useAppStore()
   const router = useRouter()
@@ -128,11 +129,17 @@ export function NewProjectDialog({
     }
 
     setIsLoading(true)
+    setLoadingStage("Creating carousel...")
 
     try {
       // Process template and document IDs properly
       const processedTemplateId = templateId && templateId !== "none" ? templateId : null
       const processedDocumentId = documentId && documentId !== "none" ? documentId : null
+
+      // Show AI generation stage if source text is provided
+      if (sourceText.trim().length >= 50) {
+        setLoadingStage("Generating AI content...")
+      }
 
       const response = await fetch("/api/projects", {
         method: "POST",
@@ -156,6 +163,8 @@ export function NewProjectDialog({
         throw new Error(errorData.error || `Failed to create project (${response.status})`)
       }
 
+      setLoadingStage("Finalizing slides...")
+
       const { project } = await response.json()
       addProject(project)
 
@@ -170,6 +179,7 @@ export function NewProjectDialog({
       alert(`Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
+      setLoadingStage("")
     }
   }
 
@@ -322,7 +332,7 @@ export function NewProjectDialog({
             </Button>
             <Button type="submit" disabled={!title.trim() || sourceText.trim().length < 50 || isLoading}>
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Carousel
+              {isLoading ? loadingStage : "Create Carousel"}
             </Button>
           </DialogFooter>
         </form>

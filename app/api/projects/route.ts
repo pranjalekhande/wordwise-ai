@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
     const slidesToCreate = Array.from({ length: numberOfSlides }, (_, index) => ({
       project_id: project.id,
       slide_number: index + 1,
-      content: source_text && index === 0 ? `Generated from: ${template_type || 'STORY'} template\n\n[Slide content will be generated here]` : "",
+      content: "",
       char_count: 0,
     }))
 
@@ -198,6 +198,61 @@ export async function POST(request: NextRequest) {
       console.warn("Project created but initial slide creation failed. User can add slides manually.")
     } else {
       console.log(`Created ${numberOfSlides} initial slides for project ${project.id}`)
+    }
+
+    // If source text is provided, generate AI content for slides
+    if (source_text && template_type && source_text.trim().length >= 50) {
+      try {
+        console.log(`Generating AI content for project ${project.id}...`)
+        
+        // Call our AI generation API
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/generate-slides`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': request.headers.get('Authorization') || '',
+            'Cookie': request.headers.get('Cookie') || '',
+          },
+          body: JSON.stringify({
+            source_text: source_text.trim(),
+            template_type,
+            slide_count: numberOfSlides,
+            project_id: project.id
+          }),
+        })
+
+        if (response.ok) {
+          const { slides: generatedSlides } = await response.json()
+          console.log(`Generated ${generatedSlides.length} slides with AI content`)
+
+          // Update slides with generated content
+          for (const slideData of generatedSlides) {
+                         const { error: updateError } = await supabase
+               .from("slides")
+               .update({
+                 title: slideData.title,
+                 content: slideData.content,
+                 char_count: slideData.content.length
+               })
+              .eq("project_id", project.id)
+              .eq("slide_number", slideData.slide_number)
+
+            if (updateError) {
+              console.error(`Error updating slide ${slideData.slide_number}:`, updateError)
+            }
+          }
+
+          console.log(`Successfully updated slides with AI-generated content for project ${project.id}`)
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          console.warn('AI generation failed:', errorData)
+          console.log('Proceeding with empty slides as fallback')
+        }
+      } catch (aiError) {
+        console.error('AI generation error:', aiError)
+        console.log('Proceeding with empty slides as fallback')
+        // Continue without AI generation - user gets empty slides
+      }
     }
 
     return NextResponse.json({ project })
