@@ -34,10 +34,63 @@ Transform your existing "Projects" into "InstaCarousels" - simple, document-driv
   - [x] **Number of Slides**: Number input (3-10 range) ✅ **COMPLETED**
 - [x] Remove complex template selection UI ✅ **COMPLETED**
 
-### **2.2 Document Integration**
-- [ ] Add "Create Carousel from Document" button to document list
-- [ ] Pre-populate source text from selected document
-- [ ] Link carousel back to source document (`document_id`)
+### **2.2 Document Integration** ✅ **COMPLETED**
+- [x] Add "Create Carousel from Document" button to document list ✅ **COMPLETED**
+- [x] Pre-populate source text from selected document ✅ **COMPLETED**
+- [x] Link carousel back to source document (`document_id`) ✅ **COMPLETED**
+- [x] **BONUS**: Enhanced document editor integration with multiple entry points ✅ **COMPLETED**
+- [x] **BONUS**: Smart content analysis and template type detection ✅ **COMPLETED**
+
+**Result:** Users can now create carousels with source text, choose template types, and specify slide count. The system creates multiple slides ready for editing.
+
+### ✅ **COMPLETED - Phase 2.2 (Document Integration)**
+**Date Completed:** Today
+
+**Backend Integration (`lib/document-to-carousel.ts`):**
+- [x] **Smart Content Analysis**: Created utility functions for template type detection and slide count calculation
+- [x] **Template Detection**: Analyzes content for PRODUCT, NEWS, and STORY keywords
+- [x] **Intelligent Slide Counting**: Calculates optimal slide count based on content length (3-8 slides)
+- [x] **Document Processing**: Converts documents to carousel-ready data with pre-filled fields
+- [x] **Validation**: Comprehensive content validation with helpful error messages
+
+**Frontend Integration (`components/dashboard/new-project-dialog.tsx`):**
+- [x] **External Dialog Control**: Enhanced dialog to accept external triggers and pre-filled data
+- [x] **Smart Pre-filling**: All form fields can be pre-populated from document analysis
+- [x] **Seamless Integration**: Maintains all existing functionality while adding new capabilities
+
+**UI Integration - Multiple Entry Points:**
+- [x] **Documents List**: Added "Create Carousel" to document dropdown menus
+- [x] **Recent Documents**: Added same functionality to dashboard recent documents section
+- [x] **Document Editor**: Enhanced with multiple carousel creation options:
+  - Header dropdown menu with "Create Carousel" option
+  - Prominent "Create Carousel" button in tabs section
+  - Smart disabled state when content is insufficient
+  - Auto-save functionality before carousel creation
+
+**User Experience Enhancements:**
+- [x] **2-Click Creation**: Users can create carousels from any document in just 2 clicks
+- [x] **Smart Defaults**: Template type and slide count automatically suggested based on content
+- [x] **Seamless Workflow**: Direct integration from document editing to carousel creation
+- [x] **Consistent Icons**: Used Grid3X3 icon consistently across all entry points
+
+**Result:** Complete document-to-carousel workflow with intelligent content analysis and multiple user-friendly entry points. Users can now seamlessly transform any document into an Instagram carousel with smart pre-filling and minimal effort.
+
+### 🔄 **IN PROGRESS - What's Working vs What's Next**
+
+**✅ Currently Working:**
+- Full InstaCarousel creation with source text input
+- Template type selection (NEWS/STORY/PRODUCT)
+- Variable slide count (3-10 slides)
+- Multiple slide creation and editing
+- Template system (brand voice templates)
+- Document linking
+- Auto-save functionality
+- Export capabilities
+
+**🔄 Next Priority (Phase 3.1 - AI Generation):**
+- Basic AI content generation from source text
+- Template-specific content splitting
+- Simple content distribution across slides
 
 ---
 
@@ -189,6 +242,38 @@ ALTER TABLE insta_carousels ADD COLUMN template_type VARCHAR(20) DEFAULT 'STORY'
 - [x] **Enhanced Validation**: Comprehensive validation with specific error messages
 
 **Result:** Users can now create carousels with source text, choose template types, and specify slide count. The system creates multiple slides ready for editing.
+
+### ✅ **COMPLETED - Phase 2.2 (Document Integration)**
+**Date Completed:** Today
+
+**Backend Integration (`lib/document-to-carousel.ts`):**
+- [x] **Smart Content Analysis**: Created utility functions for template type detection and slide count calculation
+- [x] **Template Detection**: Analyzes content for PRODUCT, NEWS, and STORY keywords
+- [x] **Intelligent Slide Counting**: Calculates optimal slide count based on content length (3-8 slides)
+- [x] **Document Processing**: Converts documents to carousel-ready data with pre-filled fields
+- [x] **Validation**: Comprehensive content validation with helpful error messages
+
+**Frontend Integration (`components/dashboard/new-project-dialog.tsx`):**
+- [x] **External Dialog Control**: Enhanced dialog to accept external triggers and pre-filled data
+- [x] **Smart Pre-filling**: All form fields can be pre-populated from document analysis
+- [x] **Seamless Integration**: Maintains all existing functionality while adding new capabilities
+
+**UI Integration - Multiple Entry Points:**
+- [x] **Documents List**: Added "Create Carousel" to document dropdown menus
+- [x] **Recent Documents**: Added same functionality to dashboard recent documents section
+- [x] **Document Editor**: Enhanced with multiple carousel creation options:
+  - Header dropdown menu with "Create Carousel" option
+  - Prominent "Create Carousel" button in tabs section
+  - Smart disabled state when content is insufficient
+  - Auto-save functionality before carousel creation
+
+**User Experience Enhancements:**
+- [x] **2-Click Creation**: Users can create carousels from any document in just 2 clicks
+- [x] **Smart Defaults**: Template type and slide count automatically suggested based on content
+- [x] **Seamless Workflow**: Direct integration from document editing to carousel creation
+- [x] **Consistent Icons**: Used Grid3X3 icon consistently across all entry points
+
+**Result:** Complete document-to-carousel workflow with intelligent content analysis and multiple user-friendly entry points. Users can now seamlessly transform any document into an Instagram carousel with smart pre-filling and minimal effort.
 
 ### 🔄 **IN PROGRESS - What's Working vs What's Next**
 

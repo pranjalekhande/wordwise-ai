@@ -22,15 +22,49 @@ import { useAppStore } from "@/lib/store"
 import { useRouter } from "next/navigation"
 import type { Document } from "@/lib/types"
 
-export function NewProjectDialog() {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [sourceText, setSourceText] = useState("")
-  const [templateType, setTemplateType] = useState<string>("STORY")
-  const [slideCount, setSlideCount] = useState<number>(5)
+interface NewProjectDialogProps {
+  // Core pre-filling
+  preFilledTitle?: string
+  preFilledSourceText?: string  
+  preFilledDocumentId?: string
+  
+  // Smart suggestions
+  preFilledTemplateType?: "NEWS" | "STORY" | "PRODUCT"
+  preFilledSlideCount?: number
+  
+  // Additional context
+  preFilledDescription?: string
+  
+  // Dialog control for external triggering
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children?: React.ReactNode // Custom trigger element
+}
+
+export function NewProjectDialog({ 
+  preFilledTitle,
+  preFilledSourceText,
+  preFilledDocumentId,
+  preFilledTemplateType,
+  preFilledSlideCount,
+  preFilledDescription,
+  isOpen: externalOpen,
+  onOpenChange: externalOnOpenChange,
+  children
+}: NewProjectDialogProps = {}) {
+  // Handle external dialog control
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = externalOpen !== undefined ? externalOpen : internalOpen
+  const setOpen = externalOnOpenChange || setInternalOpen
+
+  // Initialize state with pre-filled values
+  const [title, setTitle] = useState(preFilledTitle || "")
+  const [description, setDescription] = useState(preFilledDescription || "")
+  const [sourceText, setSourceText] = useState(preFilledSourceText || "")
+  const [templateType, setTemplateType] = useState<string>(preFilledTemplateType || "STORY")
+  const [slideCount, setSlideCount] = useState<number>(preFilledSlideCount || 5)
   const [templateId, setTemplateId] = useState<string>("")
-  const [documentId, setDocumentId] = useState<string>("")
+  const [documentId, setDocumentId] = useState<string>(preFilledDocumentId || "")
   const [targetAudience, setTargetAudience] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [documents, setDocuments] = useState<Document[]>([])
@@ -50,6 +84,16 @@ export function NewProjectDialog() {
     }
   }, [open])
 
+  // Set document selection when pre-filled document ID is provided
+  useEffect(() => {
+    if (preFilledDocumentId && documents.length > 0) {
+      const documentExists = documents.some(doc => doc.id === preFilledDocumentId)
+      if (documentExists) {
+        setDocumentId(preFilledDocumentId)
+      }
+    }
+  }, [preFilledDocumentId, documents])
+
   const fetchDocuments = async () => {
     try {
       const response = await fetch("/api/documents")
@@ -60,6 +104,18 @@ export function NewProjectDialog() {
     } catch (error) {
       console.error("Error fetching documents:", error)
     }
+  }
+
+  const resetForm = () => {
+    // Reset to pre-filled values or defaults
+    setTitle(preFilledTitle || "")
+    setDescription(preFilledDescription || "")
+    setSourceText(preFilledSourceText || "")
+    setTemplateType(preFilledTemplateType || "STORY")
+    setSlideCount(preFilledSlideCount || 5)
+    setTemplateId("")
+    setDocumentId(preFilledDocumentId || "")
+    setTargetAudience("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,14 +160,7 @@ export function NewProjectDialog() {
       addProject(project)
 
       setOpen(false)
-      setTitle("")
-      setDescription("")
-      setSourceText("")
-      setTemplateType("STORY")
-      setSlideCount(5)
-      setTemplateId("")
-      setDocumentId("")
-      setTargetAudience("")
+      resetForm()
 
       // Navigate to the editor
       router.push(`/editor/${project.id}`)
@@ -126,12 +175,14 @@ export function NewProjectDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New InstaCarousel
-        </Button>
-      </DialogTrigger>
+      {children || (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New InstaCarousel
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>

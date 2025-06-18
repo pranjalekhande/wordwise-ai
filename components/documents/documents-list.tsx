@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { FileText, Plus, Search, MoreHorizontal, Edit, Trash2, Download } from "lucide-react"
+import { FileText, Plus, Search, MoreHorizontal, Edit, Trash2, Download, Grid3X3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,11 +12,15 @@ import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { formatDate } from "@/lib/utils"
 import type { Document } from "@/lib/types"
+import { NewProjectDialog } from "@/components/dashboard/new-project-dialog"
+import { createCarouselFromDocument } from "@/lib/document-to-carousel"
 
 export function DocumentsList() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [carouselDialogOpen, setCarouselDialogOpen] = useState(false)
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -47,6 +51,12 @@ export function DocumentsList() {
 
   const handleNewDocument = () => {
     router.push("/documents/new")
+  }
+
+  const handleCreateCarousel = (document: Document, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedDocument(document)
+    setCarouselDialogOpen(true)
   }
 
   const handleDelete = async (documentId: string, e: React.MouseEvent) => {
@@ -142,11 +152,23 @@ export function DocumentsList() {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )        )}
       </div>
-    )
-  }
+
+      {/* Document to Carousel Dialog */}
+      {selectedDocument && (
+        <NewProjectDialog 
+          isOpen={carouselDialogOpen}
+          onOpenChange={(open) => {
+            setCarouselDialogOpen(open)
+            if (!open) setSelectedDocument(null) // Clean up when closed
+          }}
+          {...createCarouselFromDocument(selectedDocument)}
+        />
+      )}
+    </div>
+  )
+}
 
   return (
     <div className="space-y-6">
@@ -196,6 +218,10 @@ export function DocumentsList() {
                     <DropdownMenuItem onClick={() => handleDocumentClick(document.id)}>
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => handleCreateCarousel(document, e)}>
+                      <Grid3X3 className="h-4 w-4 mr-2" />
+                      Create Carousel
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={(e) => handleDocumentExport(document.id, e)}>
                       <Download className="h-4 w-4 mr-2" />
