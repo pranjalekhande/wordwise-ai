@@ -52,6 +52,8 @@ export interface Slide {
   tone?: string
   hashtags?: string[]
   image_description?: string
+  variations?: string | any[] // JSON string or parsed array of content variations
+  selectedVariationId?: string
   created_at: string
   updated_at: string
 }

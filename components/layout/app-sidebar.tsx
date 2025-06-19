@@ -30,7 +30,7 @@ const navigation = [
     icon: FileText,
   },
   {
-    title: "Projects",
+    title: "InstaCarousels",
     url: "/projects",
     icon: FileText,
   },

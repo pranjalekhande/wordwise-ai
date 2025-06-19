@@ -8,7 +8,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { useAppStore } from "@/lib/store"
 import { calculateReadabilityScore, generateId } from "@/lib/utils"
+import { SuggestionsButton } from "@/components/editor/suggestions-button"
+import { SuggestionsCard } from "@/components/editor/suggestions-card"
 import type { Slide } from "@/lib/types"
+import type { Suggestion } from "@/app/api/generate-variations/route"
 
 interface SlideEditorProps {
   projectId: string
@@ -31,6 +34,7 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
 
   const [content, setContent] = useState("")
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
 
   useEffect(() => {
     if (currentSlide) {
@@ -125,6 +129,19 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
     }
   }
 
+  const handleSuggestionsGenerated = (newSuggestions: Suggestion[]) => {
+    setSuggestions(newSuggestions)
+  }
+
+  const handleReplaceSuggestion = (newContent: string) => {
+    handleContentChange(newContent) // Use existing content change handler
+    setSuggestions([]) // Clear suggestions
+  }
+
+  const handleDismissSuggestions = () => {
+    setSuggestions([])
+  }
+
   const readabilityScore = calculateReadabilityScore(content)
   const charLimit = selectedTemplate?.voice_profile.max_chars || 280
   const isOverLimit = content.length > charLimit
@@ -196,6 +213,13 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
                       Saved {lastSaved.toLocaleTimeString()}
                     </div>
                   )}
+                  
+                  {/* NEW: Suggestions Button */}
+                  <SuggestionsButton
+                    content={content}
+                    onSuggestionsGenerated={handleSuggestionsGenerated}
+                    disabled={isAutoSaving}
+                  />
                 </div>
               </div>
             </CardHeader>
@@ -206,6 +230,15 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
                 placeholder="Write your Instagram carousel slide content here..."
                 className="min-h-[300px] resize-none"
               />
+              
+              {/* NEW: Suggestions Card */}
+              {suggestions.length > 0 && (
+                <SuggestionsCard
+                  suggestions={suggestions}
+                  onReplace={handleReplaceSuggestion}
+                  onDismiss={handleDismissSuggestions}
+                />
+              )}
             </CardContent>
           </Card>
         </div>

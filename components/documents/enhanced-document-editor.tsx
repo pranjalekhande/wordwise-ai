@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Loader2,
   X,
+  Grid3X3,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,8 @@ import { calculateReadabilityScore } from "@/lib/utils"
 import { generateUntitledName } from "@/lib/document-utils"
 import { useGrammarCheck } from "@/hooks/use-grammar-check"
 import { GrammarHighlight } from "@/components/documents/grammar-highlight-simple"
+import { NewProjectDialog } from "@/components/dashboard/new-project-dialog"
+import { createCarouselFromDocument } from "@/lib/document-to-carousel"
 import type { Document } from "@/lib/types"
 
 interface EnhancedDocumentEditorProps {
@@ -52,6 +55,7 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
   const [isInitialized, setIsInitialized] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [grammarCheckEnabled, setGrammarCheckEnabled] = useState(true)
+  const [carouselDialogOpen, setCarouselDialogOpen] = useState(false)
   
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
@@ -314,6 +318,14 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
     }
   }
 
+  const handleCreateCarousel = () => {
+    // First save the document if it has unsaved changes
+    if (hasUnsavedChanges) {
+      handleManualSave()
+    }
+    setCarouselDialogOpen(true)
+  }
+
   const handleApplySuggestion = (issueId: string, suggestion: string) => {
     const newContent = applySuggestion(issueId, suggestion, content)
     setContent(newContent)
@@ -423,6 +435,13 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleCreateCarousel}
+                disabled={!content.trim() || content.trim().length < 50}
+              >
+                <Grid3X3 className="h-4 w-4 mr-2" />
+                Create Carousel
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <Share className="h-4 w-4 mr-2" />
                 Share
@@ -468,6 +487,17 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
                     Grammar Check
                   </TabsTrigger>
                 </TabsList>
+
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleCreateCarousel}
+                  disabled={!content.trim() || content.trim().length < 50}
+                  className="flex items-center gap-2"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                  Create Carousel
+                </Button>
 
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -800,6 +830,25 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
           </Card>
         </div>
       </div>
+
+      {/* Document to Carousel Dialog */}
+      {carouselDialogOpen && currentDocumentId && (
+        <NewProjectDialog 
+          isOpen={carouselDialogOpen}
+          onOpenChange={setCarouselDialogOpen}
+          {...createCarouselFromDocument({
+            id: currentDocumentId,
+            user_id: 'current-user',
+            title: title.trim() || 'Untitled',
+            content: content,
+            word_count: wordCount,
+            char_count: charCount,
+            language: 'en',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })}
+        />
+      )}
     </div>
   )
 } 

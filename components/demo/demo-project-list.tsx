@@ -46,18 +46,18 @@ export function DemoProjectList() {
       <Alert>
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
-          This is a demo interface. Configure authentication and database to create real projects.
+          This is a demo interface. Configure authentication and database to create real carousels.
         </AlertDescription>
       </Alert>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
-          <p className="text-muted-foreground">Manage your Instagram carousel projects</p>
+                  <h1 className="text-3xl font-bold">InstaCarousels</h1>
+        <p className="text-muted-foreground">Manage your Instagram carousels</p>
         </div>
         <Button disabled>
           <Plus className="h-4 w-4 mr-2" />
-          New Project (Demo)
+          New InstaCarousel (Demo)
         </Button>
       </div>
 
@@ -65,7 +65,7 @@ export function DemoProjectList() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search projects..."
+            placeholder="Search carousels..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
