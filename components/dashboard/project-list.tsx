@@ -264,9 +264,8 @@ export function ProjectList() {
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No carousels found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery ? "Try adjusting your search terms" : "Create your first Instagram carousel"}
+              {searchQuery ? "Try adjusting your search terms" : "Create your first Instagram carousel using the button above"}
             </p>
-            <NewProjectDialog />
           </div>
         )}
              </div>
@@ -369,8 +368,7 @@ export function ProjectList() {
           <div className="text-center py-8">
             <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <h3 className="text-lg font-medium mb-2">No documents yet</h3>
-            <p className="text-muted-foreground mb-4">Upload your first document to get started</p>
-            <DocumentUpload onDocumentCreated={fetchRecentDocuments} />
+            <p className="text-muted-foreground">Upload documents using the button in the header above</p>
           </div>
         )}
       </div>
