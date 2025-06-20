@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { FileText, MoreHorizontal, Search, Download, Trash2, Edit, Clock } from "lucide-react"
+import { FileText, MoreHorizontal, Search, Download, Trash2, Edit, Clock, Grid3X3, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,12 +14,16 @@ import { formatDate } from "@/lib/utils"
 import { NewProjectDialog } from "./new-project-dialog"
 import { useRouter } from "next/navigation"
 import { DocumentUpload } from "@/components/documents/document-upload"
+import { createCarouselFromDocument } from "@/lib/document-to-carousel"
+import { TemplateTypeBadge } from "@/components/ui/template-type-badge"
 import type { Document } from "@/lib/types"
 
 export function ProjectList() {
   const { projects, setProjects, deleteProject } = useAppStore()
   const [searchQuery, setSearchQuery] = useState("")
   const [recentDocuments, setRecentDocuments] = useState<Document[]>([])
+  const [carouselDialogOpen, setCarouselDialogOpen] = useState(false)
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -67,10 +71,16 @@ export function ProjectList() {
     router.push("/documents")
   }
 
+  const handleCreateCarousel = (document: Document, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedDocument(document)
+    setCarouselDialogOpen(true)
+  }
+
   const handleDelete = async (projectId: string, e: React.MouseEvent) => {
     e.stopPropagation()
 
-    if (!confirm("Are you sure you want to delete this project?")) return
+    if (!confirm("Are you sure you want to delete this carousel?")) return
 
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
@@ -83,6 +93,11 @@ export function ProjectList() {
     } catch (error) {
       console.error("Error deleting project:", error)
     }
+  }
+
+  const handleSourceDocumentClick = (documentId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/documents/${documentId}`)
   }
 
   const handleDocumentDelete = async (documentId: string, e: React.MouseEvent) => {
@@ -138,8 +153,8 @@ export function ProjectList() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Projects</h1>
-            <p className="text-muted-foreground">Manage your Instagram carousel projects</p>
+                    <h1 className="text-3xl font-bold">InstaCarousels</h1>
+        <p className="text-muted-foreground">Manage your Instagram carousels</p>
           </div>
           <div className="flex items-center gap-2">
             <DocumentUpload onDocumentCreated={fetchRecentDocuments} />
@@ -151,7 +166,7 @@ export function ProjectList() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search projects..."
+              placeholder="Search carousels..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -200,10 +215,39 @@ export function ProjectList() {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {project.slides?.length || 0} slides • Created {formatDate(project.created_at)}
                   </p>
+                  
+                  {/* Source Document Link */}
+                  {project.documents && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">Source:</span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                        onClick={(e) => handleSourceDocumentClick(project.documents!.id, e)}
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        {project.documents.title}
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {project.template_id ? "Template Applied" : "No Template"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {/* Template Type Badge */}
+                      {project.template_type && (
+                        <TemplateTypeBadge 
+                          templateType={project.template_type}
+                          showIcon={true}
+                          size="sm"
+                        />
+                      )}
+                      {/* Template Applied Badge */}
+                      <Badge variant="outline" className="text-xs">
+                        {project.template_id ? "Template Applied" : "No Template"}
+                      </Badge>
+                    </div>
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded-full bg-green-500" />
                       <span className="text-xs text-muted-foreground">Saved</span>
@@ -218,11 +262,10 @@ export function ProjectList() {
         {filteredProjects.length === 0 && (
           <div className="text-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+            <h3 className="text-lg font-semibold mb-2">No carousels found</h3>
             <p className="text-muted-foreground mb-4">
-              {searchQuery ? "Try adjusting your search terms" : "Create your first Instagram carousel project"}
+              {searchQuery ? "Try adjusting your search terms" : "Create your first Instagram carousel using the button above"}
             </p>
-            <NewProjectDialog />
           </div>
         )}
              </div>
@@ -269,6 +312,10 @@ export function ProjectList() {
                         <DropdownMenuItem onClick={() => handleDocumentClick(document.id)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleCreateCarousel(document, e)}>
+                          <Grid3X3 className="h-4 w-4 mr-2" />
+                          Create Carousel
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => handleDocumentExport(document.id, e)}>
                           <Download className="h-4 w-4 mr-2" />
@@ -321,11 +368,22 @@ export function ProjectList() {
           <div className="text-center py-8">
             <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <h3 className="text-lg font-medium mb-2">No documents yet</h3>
-            <p className="text-muted-foreground mb-4">Upload your first document to get started</p>
-            <DocumentUpload onDocumentCreated={fetchRecentDocuments} />
+            <p className="text-muted-foreground">Upload documents using the button in the header above</p>
           </div>
         )}
       </div>
+
+      {/* Document to Carousel Dialog */}
+      {selectedDocument && (
+        <NewProjectDialog 
+          isOpen={carouselDialogOpen}
+          onOpenChange={(open) => {
+            setCarouselDialogOpen(open)
+            if (!open) setSelectedDocument(null) // Clean up when closed
+          }}
+          {...createCarouselFromDocument(selectedDocument)}
+        />
+      )}
     </div>
   )
 }

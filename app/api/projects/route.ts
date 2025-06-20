@@ -26,6 +26,11 @@ export async function GET() {
           id,
           name,
           voice_profile
+        ),
+        documents (
+          id,
+          title,
+          file_name
         )
       `)
       .eq("user_id", userId)
@@ -46,9 +51,9 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch projects", details: basicError }, { status: 500 })
       }
 
-      // Manually fetch slides for each project
-      const projectsWithSlides = await Promise.all(
-        (basicProjects || []).map(async (project) => {
+      // Manually fetch slides, templates, and documents for each project
+      const projectsWithRelations = await Promise.all(
+        (basicProjects || []).map(async (project: any) => {
           const { data: slides } = await supabase
             .from("slides")
             .select("id, slide_number, content, char_count, tone, created_at, updated_at")
@@ -61,15 +66,22 @@ export async function GET() {
             .eq("id", project.template_id)
             .single()
 
+          const { data: document } = await supabase
+            .from("documents")
+            .select("id, title, file_name")
+            .eq("id", project.document_id)
+            .single()
+
           return {
             ...project,
             slides: slides || [],
             brand_voice_templates: template,
+            documents: document,
           }
         }),
       )
 
-      projects = projectsWithSlides
+      projects = projectsWithRelations
     }
 
     return NextResponse.json({ projects: projects || [] })
@@ -96,10 +108,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 })
     }
 
-    const { title, description, template_id, document_id, target_audience } = body
+    const { title, description, source_text, template_type, slide_count, template_id, document_id, target_audience } = body
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return NextResponse.json({ error: "Title is required and must be a non-empty string" }, { status: 400 })
+    }
+
+    // Validate source_text if provided
+    if (source_text && (typeof source_text !== 'string' || source_text.trim().length < 50)) {
+      return NextResponse.json({ error: "Source text must be at least 50 characters long" }, { status: 400 })
+    }
+
+    // Validate template_type if provided
+    if (template_type && !['NEWS', 'STORY', 'PRODUCT'].includes(template_type)) {
+      return NextResponse.json({ error: "Template type must be NEWS, STORY, or PRODUCT" }, { status: 400 })
+    }
+
+    // Validate slide_count if provided
+    if (slide_count && (typeof slide_count !== 'number' || slide_count < 3 || slide_count > 10)) {
+      return NextResponse.json({ error: "Slide count must be between 3 and 10" }, { status: 400 })
     }
 
     // Validate optional foreign key references
@@ -111,9 +138,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "document_id must be a string" }, { status: 400 })
     }
 
+    // Store source_text in description if provided (temporary solution)
+    const finalDescription = source_text ? `${source_text}\n\n---\n\n${description || ''}`.trim() : (description || null)
+
     console.log("Creating project for user:", userId, "with data:", {
       title: title.trim(),
-      description: description || null,
+      description: finalDescription,
+      template_type: template_type || 'STORY',
       template_id: template_id || null,
       document_id: document_id || null,
       target_audience: target_audience || null,
@@ -125,9 +156,10 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         title: title.trim(),
-        description: description || null,
+        description: finalDescription,
         template_id: template_id || null,
         document_id: document_id || null,
+        template_type: template_type || 'STORY',
         target_audience: target_audience || null,
       })
       .select()
@@ -162,18 +194,78 @@ export async function POST(request: NextRequest) {
 
     console.log("Project created successfully:", project.id)
 
-    // Create initial slide
-    const { error: slideError } = await supabase.from("slides").insert({
+    // Create initial slides based on slide_count
+    const numberOfSlides = slide_count || 5
+    const slidesToCreate = Array.from({ length: numberOfSlides }, (_, index) => ({
       project_id: project.id,
-      slide_number: 1,
+      slide_number: index + 1,
       content: "",
       char_count: 0,
-    })
+    }))
+
+    const { error: slideError } = await supabase.from("slides").insert(slidesToCreate)
 
     if (slideError) {
-      console.error("Error creating initial slide:", slideError)
-      // Note: Project was created but slide failed - this is a warning, not a complete failure
+      console.error("Error creating initial slides:", slideError)
+      // Note: Project was created but slides failed - this is a warning, not a complete failure
       console.warn("Project created but initial slide creation failed. User can add slides manually.")
+    } else {
+      console.log(`Created ${numberOfSlides} initial slides for project ${project.id}`)
+    }
+
+    // If source text is provided, generate AI content for slides
+    if (source_text && template_type && source_text.trim().length >= 50) {
+      try {
+        console.log(`Generating AI content for project ${project.id}...`)
+        
+        // Call our AI generation API
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/generate-slides`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': request.headers.get('Authorization') || '',
+            'Cookie': request.headers.get('Cookie') || '',
+          },
+          body: JSON.stringify({
+            source_text: source_text.trim(),
+            template_type,
+            slide_count: numberOfSlides,
+            project_id: project.id
+          }),
+        })
+
+        if (response.ok) {
+          const { slides: generatedSlides } = await response.json()
+          console.log(`Generated ${generatedSlides.length} slides with AI content`)
+
+          // Update slides with generated content
+          for (const slideData of generatedSlides) {
+                         const { error: updateError } = await supabase
+               .from("slides")
+               .update({
+                 title: slideData.title,
+                 content: slideData.content,
+                 char_count: slideData.content.length
+               })
+              .eq("project_id", project.id)
+              .eq("slide_number", slideData.slide_number)
+
+            if (updateError) {
+              console.error(`Error updating slide ${slideData.slide_number}:`, updateError)
+            }
+          }
+
+          console.log(`Successfully updated slides with AI-generated content for project ${project.id}`)
+        } else {
+          const errorData = await response.json().catch(() => ({}))
+          console.warn('AI generation failed:', errorData)
+          console.log('Proceeding with empty slides as fallback')
+        }
+      } catch (aiError) {
+        console.error('AI generation error:', aiError)
+        console.log('Proceeding with empty slides as fallback')
+        // Continue without AI generation - user gets empty slides
+      }
     }
 
     return NextResponse.json({ project })

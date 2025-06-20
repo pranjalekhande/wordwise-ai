@@ -17,14 +17,14 @@ import {
   CheckCircle2,
   Loader2,
   X,
+  Grid3X3,
+  Sparkles,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -32,6 +32,8 @@ import { calculateReadabilityScore } from "@/lib/utils"
 import { generateUntitledName } from "@/lib/document-utils"
 import { useGrammarCheck } from "@/hooks/use-grammar-check"
 import { GrammarHighlight } from "@/components/documents/grammar-highlight-simple"
+import { NewProjectDialog } from "@/components/dashboard/new-project-dialog"
+import { createCarouselFromDocument } from "@/lib/document-to-carousel"
 import type { Document } from "@/lib/types"
 
 interface EnhancedDocumentEditorProps {
@@ -52,6 +54,7 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
   const [isInitialized, setIsInitialized] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [grammarCheckEnabled, setGrammarCheckEnabled] = useState(true)
+  const [carouselDialogOpen, setCarouselDialogOpen] = useState(false)
   
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   
@@ -314,6 +317,14 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
     }
   }
 
+  const handleCreateCarousel = () => {
+    // First save the document if it has unsaved changes
+    if (hasUnsavedChanges) {
+      handleManualSave()
+    }
+    setCarouselDialogOpen(true)
+  }
+
   const handleApplySuggestion = (issueId: string, suggestion: string) => {
     const newContent = applySuggestion(issueId, suggestion, content)
     setContent(newContent)
@@ -324,7 +335,6 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
   }
 
   const readabilityScore = calculateReadabilityScore(content)
-  const dailyGoal = 500
 
   if (!isInitialized) {
     return (
@@ -356,26 +366,21 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Grammar Check Status */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {isChecking ? (
-              <>
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Checking...
-              </>
-            ) : summary.totalIssues > 0 ? (
-              <>
-                <AlertCircle className="h-3 w-3 text-orange-500" />
-                {summary.totalIssues} issues
-              </>
-            ) : content.length > 10 ? (
-              <>
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
-                No issues
-              </>
-            ) : null}
+        <div className="flex items-center gap-4">
+          {/* Smart Grammar Toggle */}
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={grammarCheckEnabled}
+              onCheckedChange={setGrammarCheckEnabled}
+              id="grammar-check"
+            />
+            <label htmlFor="grammar-check" className="text-sm">
+              Smart grammar
+            </label>
           </div>
+
+          {/* Word Count */}
+          <div className="text-sm text-muted-foreground">{wordCount} words</div>
 
           {/* Save Status */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -423,6 +428,13 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleCreateCarousel}
+                disabled={!content.trim() || content.trim().length < 50}
+              >
+                <Grid3X3 className="h-4 w-4 mr-2" />
+                Create Carousel
+              </DropdownMenuItem>
               <DropdownMenuItem>
                 <Share className="h-4 w-4 mr-2" />
                 Share
@@ -450,71 +462,58 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
       <div className="flex flex-1 overflow-hidden">
         {/* Editor */}
         <div className="flex-1 flex flex-col">
-          {/* Tabs */}
-          <div className="border-b">
-            <Tabs defaultValue="goals" className="w-full">
-              <div className="flex items-center justify-between px-6 py-2">
-                <TabsList className="grid w-auto grid-cols-3">
-                  <TabsTrigger value="goals" className="flex items-center gap-2">
-                    <Target className="h-4 w-4" />
-                    Goals
-                  </TabsTrigger>
-                  <TabsTrigger value="score" className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Overall score
-                  </TabsTrigger>
-                  <TabsTrigger value="ai" className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    Grammar Check
-                  </TabsTrigger>
-                </TabsList>
+          {/* Header Bar */}
+          <div className="border-b px-6 py-2 flex items-center justify-between">
+            {/* Left side - Create Carousel */}
+            <Button
+              variant="outline" 
+              size="sm"
+              onClick={handleCreateCarousel}
+              disabled={!content.trim() || content.trim().length < 50}
+              className="flex items-center gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              Create Carousel
+            </Button>
 
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={grammarCheckEnabled}
-                      onCheckedChange={setGrammarCheckEnabled}
-                      id="grammar-check"
-                    />
-                    <label htmlFor="grammar-check" className="text-sm">
-                      Smart grammar checking
-                    </label>
-                  </div>
-                  <div className="text-sm text-muted-foreground">{wordCount} words</div>
-                </div>
+            {/* Right side - Grammar Status + Check */}
+            <div className="flex items-center gap-4">
+              {/* Grammar Check Status */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {isChecking ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Checking...
+                  </>
+                ) : summary.totalIssues > 0 ? (
+                  <>
+                    <AlertCircle className="h-3 w-3 text-orange-500" />
+                    {summary.totalIssues} issues
+                  </>
+                ) : content.length > 10 ? (
+                  <>
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    No issues
+                  </>
+                ) : null}
               </div>
 
-              {/* Tab Content */}
-              <TabsContent value="ai" className="px-6 py-2">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualGrammarCheck}
-                    disabled={isChecking || !content.trim()}
-                  >
-                    {isChecking ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                    )}
-                    Force Check
-                  </Button>
-                  {summary.totalIssues > 0 && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{summary.grammarIssues + summary.spellingIssues} grammar & spelling,</span>
-                      <span>{summary.styleIssues} paraphrase suggestions</span>
-                    </div>
-                  )}
-                  <div className="text-xs text-muted-foreground">
-                    Auto-checks when you pause writing
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Auto-saves after 5s pause
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+              {/* Check Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManualGrammarCheck}
+                disabled={isChecking || !content.trim()}
+                className="flex items-center gap-1"
+              >
+                {isChecking ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                Check
+              </Button>
+            </div>
           </div>
 
           {/* Writing Area */}
@@ -741,23 +740,6 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
             </Card>
           )}
 
-          {/* Writing Goals */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Daily Goal
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">{wordCount}</span>
-                <Badge variant="outline">{dailyGoal - wordCount} left</Badge>
-              </div>
-              <Progress value={Math.min(100, (wordCount / dailyGoal) * 100)} className="h-2" />
-            </CardContent>
-          </Card>
-
           {/* Readability Score */}
           <Card>
             <CardHeader className="pb-3">
@@ -800,6 +782,25 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
           </Card>
         </div>
       </div>
+
+      {/* Document to Carousel Dialog */}
+      {carouselDialogOpen && currentDocumentId && (
+        <NewProjectDialog 
+          isOpen={carouselDialogOpen}
+          onOpenChange={setCarouselDialogOpen}
+          {...createCarouselFromDocument({
+            id: currentDocumentId,
+            user_id: 'current-user',
+            title: title.trim() || 'Untitled',
+            content: content,
+            word_count: wordCount,
+            char_count: charCount,
+            language: 'en',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })}
+        />
+      )}
     </div>
   )
 } 

@@ -32,6 +32,7 @@ export interface CarouselProject {
   description?: string
   template_id?: string
   document_id?: string
+  template_type?: "NEWS" | "STORY" | "PRODUCT"
   status: "draft" | "in_progress" | "completed" | "archived"
   target_audience?: string
   platform_settings?: Record<string, any>
@@ -52,6 +53,8 @@ export interface Slide {
   tone?: string
   hashtags?: string[]
   image_description?: string
+  variations?: string | any[] // JSON string or parsed array of content variations
+  selectedVariationId?: string
   created_at: string
   updated_at: string
 }
@@ -88,11 +91,6 @@ export interface UserSettings {
     push_notifications?: boolean
     weekly_reports?: boolean
   }
-  writing_goals: {
-    daily_word_target?: number
-    weekly_projects?: number
-    preferred_writing_time?: string
-  }
   created_at: string
   updated_at: string
 }
@@ -124,4 +122,14 @@ export interface GrammarCheckResponse {
     spellingIssues: number
     styleIssues: number
   }
+}
+
+export interface StyleSuggestion {
+  id: string
+  type: "emphasis" | "hashtag" | "emoji" | "mention" | "structure"
+  suggestion: string
+  original: string
+  reason: string
+  confidence: number
+  position?: { start: number; end: number }
 }
