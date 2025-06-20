@@ -15,6 +15,7 @@ import { NewProjectDialog } from "./new-project-dialog"
 import { useRouter } from "next/navigation"
 import { DocumentUpload } from "@/components/documents/document-upload"
 import { createCarouselFromDocument } from "@/lib/document-to-carousel"
+import { TemplateTypeBadge } from "@/components/ui/template-type-badge"
 import type { Document } from "@/lib/types"
 
 export function ProjectList() {
@@ -210,9 +211,20 @@ export function ProjectList() {
                     {project.slides?.length || 0} slides • Created {formatDate(project.created_at)}
                   </p>
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {project.template_id ? "Template Applied" : "No Template"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {/* Template Type Badge */}
+                      {project.template_type && (
+                        <TemplateTypeBadge 
+                          templateType={project.template_type}
+                          showIcon={true}
+                          size="sm"
+                        />
+                      )}
+                      {/* Template Applied Badge */}
+                      <Badge variant="outline" className="text-xs">
+                        {project.template_id ? "Template Applied" : "No Template"}
+                      </Badge>
+                    </div>
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded-full bg-green-500" />
                       <span className="text-xs text-muted-foreground">Saved</span>

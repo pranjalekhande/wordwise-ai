@@ -32,6 +32,7 @@ export interface CarouselProject {
   description?: string
   template_id?: string
   document_id?: string
+  template_type?: "NEWS" | "STORY" | "PRODUCT"
   status: "draft" | "in_progress" | "completed" | "archived"
   target_audience?: string
   platform_settings?: Record<string, any>

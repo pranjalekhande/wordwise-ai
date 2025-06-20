@@ -10,6 +10,8 @@ import { useAppStore } from "@/lib/store"
 import { calculateReadabilityScore, generateId } from "@/lib/utils"
 import { SuggestionsButton } from "@/components/editor/suggestions-button"
 import { SuggestionsCard } from "@/components/editor/suggestions-card"
+import { GrammarSidebar } from "@/components/editor/grammar-sidebar"
+import { GrammarStatusIndicator } from "@/components/editor/grammar-status-indicator"
 import type { Slide } from "@/lib/types"
 import type { Suggestion } from "@/app/api/generate-variations/route"
 
@@ -35,6 +37,7 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
   const [content, setContent] = useState("")
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [grammarIssuesCount, setGrammarIssuesCount] = useState(0)
 
   useEffect(() => {
     if (currentSlide) {
@@ -142,6 +145,10 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
     setSuggestions([])
   }
 
+  const handleGrammarStatusChange = (issuesCount: number) => {
+    setGrammarIssuesCount(issuesCount)
+  }
+
   const readabilityScore = calculateReadabilityScore(content)
   const charLimit = selectedTemplate?.voice_profile.max_chars || 280
   const isOverLimit = content.length > charLimit
@@ -159,9 +166,16 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium">
-            Slide {currentSlideIndex + 1} of {slides.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              Slide {currentSlideIndex + 1} of {slides.length}
+            </span>
+            <GrammarStatusIndicator 
+              issueCount={grammarIssuesCount}
+              size="sm"
+              showCount={grammarIssuesCount > 0}
+            />
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -243,28 +257,16 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
           </Card>
         </div>
 
-        {/* Sidebar with metrics and tools */}
+        {/* Sidebar with grammar and metrics */}
         <div className="space-y-4">
-          {/* Character Count */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Character Count</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold">{content.length}</span>
-                  <Badge variant={isOverLimit ? "destructive" : "secondary"}>{charLimit - content.length} left</Badge>
-                </div>
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${isOverLimit ? "bg-destructive" : "bg-primary"}`}
-                    style={{ width: `${Math.min(100, (content.length / charLimit) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Grammar Cards Integration */}
+          <GrammarSidebar 
+            content={content}
+            onContentChange={handleContentChange}
+            slideNumber={currentSlideIndex + 1}
+            totalSlides={slides.length}
+            onGrammarStatusChange={handleGrammarStatusChange}
+          />
 
           {/* Readability Score */}
           <Card>

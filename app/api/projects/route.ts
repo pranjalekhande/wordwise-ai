@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
         description: finalDescription,
         template_id: template_id || null,
         document_id: document_id || null,
+        template_type: template_type || 'STORY',
         target_audience: target_audience || null,
       })
       .select()
