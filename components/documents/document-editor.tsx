@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Save,
   MoreHorizontal,
-  Target,
   TrendingUp,
   Zap,
   FileText,
@@ -20,8 +19,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { calculateReadabilityScore } from "@/lib/utils"
@@ -45,7 +42,7 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
   const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>()
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Initialize title and content
   useEffect(() => {
@@ -234,8 +231,6 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
   }
 
   const readabilityScore = calculateReadabilityScore(content)
-  const dailyGoal = 500 // This could come from user settings
-  const goalProgress = Math.min(100, (wordCount / dailyGoal) * 100)
 
   if (!isInitialized) {
     return (
@@ -265,9 +260,10 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
               placeholder="Document title"
             />
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
+          {/* Word Count */}
+          <div className="text-sm text-muted-foreground">{wordCount} words</div>
+
           {/* Save Status */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {isAutoSaving ? (
@@ -341,28 +337,23 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
       <div className="flex flex-1 overflow-hidden">
         {/* Editor */}
         <div className="flex-1 flex flex-col">
-          {/* Tabs */}
-          <div className="border-b">
-            <Tabs defaultValue="goals" className="w-full">
-              <div className="flex items-center justify-between px-6 py-2">
-                <TabsList className="grid w-auto grid-cols-3">
-                  <TabsTrigger value="goals" className="flex items-center gap-2">
-                    <Target className="h-4 w-4" />
-                    Goals
-                  </TabsTrigger>
-                  <TabsTrigger value="score" className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Overall score
-                  </TabsTrigger>
-                  <TabsTrigger value="ai" className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    AI Assistant
-                  </TabsTrigger>
-                </TabsList>
+          {/* Header Bar */}
+          <div className="border-b px-6 py-2 flex items-center justify-between">
+            {/* Left side - Create Carousel */}
+            <Button
+              variant="outline" 
+              size="sm"
+              disabled={!content.trim() || content.trim().length < 50}
+              className="flex items-center gap-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+              Create Carousel
+            </Button>
 
-                <div className="text-sm text-muted-foreground">{wordCount} words</div>
-              </div>
-            </Tabs>
+            {/* Right side - Future features */}
+            <div className="text-sm text-muted-foreground">
+              {/* Placeholder for future grammar features */}
+            </div>
           </div>
 
           {/* Writing Area */}
@@ -390,26 +381,6 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
 
         {/* Right Sidebar */}
         <div className="w-80 border-l bg-muted/30 p-4 space-y-4 overflow-auto">
-          {/* Writing Goals */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Daily Goal
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">{wordCount}</span>
-                <Badge variant="outline">{dailyGoal - wordCount} left</Badge>
-              </div>
-              <Progress value={goalProgress} className="h-2" />
-              <p className="text-xs text-muted-foreground">
-                {goalProgress >= 100 ? "Goal achieved! 🎉" : `${Math.round(goalProgress)}% of daily goal`}
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Readability Score */}
           <Card>
             <CardHeader className="pb-3">
@@ -479,7 +450,7 @@ export function DocumentEditor({ document, isNewDocument = false }: DocumentEdit
                 Check Tone
               </Button>
               <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                <Target className="h-4 w-4 mr-2" />
+                <Zap className="h-4 w-4 mr-2" />
                 Generate Ideas
               </Button>
               <p className="text-xs text-muted-foreground mt-2">AI features coming soon!</p>

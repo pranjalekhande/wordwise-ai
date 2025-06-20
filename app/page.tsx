@@ -4,20 +4,11 @@ import { useState, useEffect } from "react"
 import { ProjectList } from "@/components/dashboard/project-list"
 import { NewProjectDialog } from "@/components/dashboard/new-project-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Plus, TrendingUp, Target, Loader2 } from "lucide-react"
+import { FileText, Plus, TrendingUp, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface UserStats {
-  todayWordCount: number
-  dailyWordTarget: number
   writingScore: number
-  weeklyProjectCount: number
-  weeklyProjectTarget: number
-  userSettings: {
-    dailyWordTarget: number
-    weeklyProjectTarget: number
-    preferredWritingTime: string
-  }
 }
 
 export default function Dashboard() {
@@ -57,7 +48,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto p-6 space-y-8">
       {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleNewDocument}>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
@@ -99,30 +90,6 @@ export default function Dashboard() {
               <>
                 <div className="text-2xl font-bold">{stats?.writingScore || 0}</div>
                 <p className="text-xs text-muted-foreground">Based on recent activity</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Daily Goal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Loading...</span>
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-bold">
-                  {stats?.todayWordCount || 0}/{stats?.dailyWordTarget || 500}
-                </div>
-                <p className="text-xs text-muted-foreground">Words written today</p>
               </>
             )}
           </CardContent>

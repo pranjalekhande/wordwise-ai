@@ -79,7 +79,6 @@ CREATE TABLE IF NOT EXISTS user_settings (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
   preferences JSONB DEFAULT '{}',
   notification_settings JSONB DEFAULT '{}',
-  writing_goals JSONB DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -209,17 +208,15 @@ ON CONFLICT (project_id, slide_number) DO UPDATE SET
   char_count = EXCLUDED.char_count;
 
 -- Insert user settings
-INSERT INTO user_settings (user_id, preferences, notification_settings, writing_goals) VALUES 
+INSERT INTO user_settings (user_id, preferences, notification_settings) VALUES 
 (
   'demo-user-123',
   '{"theme": "light", "language": "en", "auto_save": true, "spell_check": true}'::jsonb,
-  '{"email_notifications": true, "push_notifications": false, "weekly_reports": true}'::jsonb,
-  '{"daily_word_target": 500, "weekly_projects": 3, "preferred_writing_time": "morning"}'::jsonb
+  '{"email_notifications": true, "push_notifications": false, "weekly_reports": true}'::jsonb
 )
 ON CONFLICT (user_id) DO UPDATE SET
   preferences = EXCLUDED.preferences,
-  notification_settings = EXCLUDED.notification_settings,
-  writing_goals = EXCLUDED.writing_goals;
+  notification_settings = EXCLUDED.notification_settings;
 
 -- Enable RLS
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
