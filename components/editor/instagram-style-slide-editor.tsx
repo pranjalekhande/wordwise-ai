@@ -252,6 +252,47 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
   // Get template type from current project
   const templateType = (currentProject?.template_type as "NEWS" | "STORY" | "PRODUCT") || "PRODUCT"
 
+  // Safe Instagram Preview component
+  const SafeInstagramPreview = ({ content, slideNumber, totalSlides }: { 
+    content: string; 
+    slideNumber: number; 
+    totalSlides: number 
+  }) => {
+    try {
+      return (
+        <InstagramSquarePreview
+          content={content}
+          slideNumber={slideNumber}
+          totalSlides={totalSlides}
+        />
+      )
+    } catch (error) {
+      console.error('Instagram preview error:', error)
+      return (
+        <div className="flex flex-col items-center space-y-4">
+          <div className="text-sm text-muted-foreground font-medium">
+            Instagram Preview
+          </div>
+          <div className="relative w-80 h-80 bg-white border-2 border-gray-200 shadow-lg overflow-hidden rounded-lg">
+            <div className="h-full flex items-center justify-center p-6">
+              <div className="text-center w-full">
+                <div className="text-gray-400 text-sm mb-2">
+                  Preview temporarily unavailable
+                </div>
+                <div className="text-xs text-gray-300">
+                  Content: {content.substring(0, 50)}{content.length > 50 ? '...' : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {content?.length || 0} characters
+          </div>
+        </div>
+      )
+    }
+  }
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -320,9 +361,8 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
               </Tooltip>
               <PopoverContent className="w-96 p-6" align="end">
                 <div className="space-y-4">
-                  
                   <div className="flex justify-center">
-                    <InstagramSquarePreview
+                    <SafeInstagramPreview
                       content={content}
                       slideNumber={currentSlideIndex + 1}
                       totalSlides={slides.length}
@@ -401,7 +441,7 @@ Add emojis! 🎉"
             <div className="lg:col-span-4">
               <div className="flex flex-col items-start space-y-4">
                 <div className="flex justify-center w-full">
-                  <InstagramSquarePreview
+                  <SafeInstagramPreview
                     content={content}
                     slideNumber={currentSlideIndex + 1}
                     totalSlides={slides.length}
