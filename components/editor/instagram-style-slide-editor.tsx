@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight, Plus, Trash2, Copy, Eye, EyeOff } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Trash2, Copy, Eye, EyeOff, Instagram } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAppStore } from "@/lib/store"
 import { calculateReadabilityScore, generateId } from "@/lib/utils"
 import { GrammarSidebar } from "@/components/editor/grammar-sidebar"
@@ -37,6 +39,7 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   const [grammarIssuesCount, setGrammarIssuesCount] = useState(0)
   const [showPreview, setShowPreview] = useState(true)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -250,129 +253,186 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
   const templateType = (currentProject?.template_type as "NEWS" | "STORY" | "PRODUCT") || "PRODUCT"
 
   return (
-    <div className="space-y-6">
-      {/* Header Navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
-            disabled={currentSlideIndex === 0}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
-              Slide {currentSlideIndex + 1} of {slides.length}
-            </span>
-            <GrammarStatusIndicator 
-              issueCount={grammarIssuesCount}
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Header Navigation - Minimalistic */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
               size="sm"
-              showCount={grammarIssuesCount > 0}
-            />
+              onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
+              disabled={currentSlideIndex === 0}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                Image {currentSlideIndex + 1} of {slides.length}
+              </span>
+              <GrammarStatusIndicator 
+                issueCount={grammarIssuesCount}
+                size="sm"
+                showCount={grammarIssuesCount > 0}
+              />
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentSlideIndex(Math.min(slides.length - 1, currentSlideIndex + 1))}
+              disabled={currentSlideIndex === slides.length - 1}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            {/* Show Preview with tooltip */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPreview(!showPreview)}
+                >
+                  {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{showPreview ? "Hide Preview" : "Show Preview"}</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentSlideIndex(Math.min(slides.length - 1, currentSlideIndex + 1))}
-            disabled={currentSlideIndex === slides.length - 1}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+
+          <div className="flex items-center gap-2">
+            <Popover open={previewOpen} onOpenChange={setPreviewOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Instagram className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Instagram Preview</p>
+                </TooltipContent>
+              </Tooltip>
+              <PopoverContent className="w-96 p-6" align="end">
+                <div className="space-y-4">
+                  
+                  <div className="flex justify-center">
+                    <InstagramSquarePreview
+                      content={content}
+                      slideNumber={currentSlideIndex + 1}
+                      totalSlides={slides.length}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={addNewSlide} disabled={slides.length >= 10}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add Image</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={duplicateSlide} disabled={!currentSlide || slides.length >= 10}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Duplicate Image</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={deleteCurrentSlide}
+                  disabled={!currentSlide || slides.length <= 1}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete Image</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(!showPreview)}
-          >
-            {showPreview ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
-            {showPreview ? "Hide Preview" : "Show Preview"}
-          </Button>
-          <Button variant="outline" size="sm" onClick={addNewSlide} disabled={slides.length >= 10}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add Slide
-          </Button>
-          <Button variant="outline" size="sm" onClick={duplicateSlide} disabled={!currentSlide || slides.length >= 10}>
-            <Copy className="h-4 w-4 mr-1" />
-            Duplicate
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={deleteCurrentSlide}
-            disabled={!currentSlide || slides.length <= 1}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Delete
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className={`grid gap-4 ${showPreview ? 'lg:grid-cols-12' : 'lg:grid-cols-8'}`}>
-        {/* Editor */}
-        <div className={showPreview ? 'lg:col-span-5' : 'lg:col-span-5'}>
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg">Instagram Slide Editor</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Main Content - Simplified */}
+        <div className={`grid gap-6 items-start ${showPreview ? 'lg:grid-cols-12' : 'lg:grid-cols-8'}`}>
+          {/* Editor */}
+          <div className={showPreview ? 'lg:col-span-5' : 'lg:col-span-5'}>
+            <div className="space-y-4">
               <FormattingToolbar onFormatText={handleFormatText} />
               
               <Textarea
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => handleContentChange(e.target.value)}
-                placeholder="Write your Instagram carousel slide content here...
+                placeholder="Write your Instagram carousel image content here...
 
 Use **bold** for emphasis
 Use *italic* for style  
 Use #hashtags for topics
 Use @mentions for people
-Add emojis with the toolbar! 🎉"
-                className="min-h-[350px] resize-none text-base leading-relaxed"
+Add emojis! 🎉"
+                className="min-h-[400px] resize-none text-base leading-relaxed border-2 focus:border-primary"
               />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Preview */}
-        {showPreview && (
-          <div className="lg:col-span-3 flex justify-center">
-            <InstagramSquarePreview
-              content={content}
-              slideNumber={currentSlideIndex + 1}
-              totalSlides={slides.length}
-              className="scale-75"
-            />
+            </div>
           </div>
-        )}
 
-        {/* Grammar Sidebar */}
-        <div className={showPreview ? 'lg:col-span-4' : 'lg:col-span-3'}>
-          <div className="space-y-4">
-            {/* AI Style Suggestions */}
-            <AiStyleSuggestions
-              content={content}
-              templateType={templateType}
-              onApplySuggestion={handleApplyStyleSuggestion}
-            />
-            
-            {/* Grammar Sidebar */}
-            <GrammarSidebar 
-              content={content}
-              onContentChange={handleContentChange}
-              slideNumber={currentSlideIndex + 1}
-              totalSlides={slides.length}
-              onGrammarStatusChange={handleGrammarStatusChange}
-            />
+          {/* Preview */}
+          {showPreview && (
+            <div className="lg:col-span-4">
+              <div className="flex flex-col items-start space-y-4">
+                <div className="flex justify-center w-full">
+                  <InstagramSquarePreview
+                    content={content}
+                    slideNumber={currentSlideIndex + 1}
+                    totalSlides={slides.length}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sidebar - Simplified */}
+          <div className={showPreview ? 'lg:col-span-3' : 'lg:col-span-3'}>
+            <div className="space-y-4">
+              {/* AI Style Suggestions */}
+              <AiStyleSuggestions
+                content={content}
+                templateType={templateType}
+                onApplySuggestion={handleApplyStyleSuggestion}
+              />
+              
+              {/* Grammar Sidebar */}
+              <GrammarSidebar 
+                content={content}
+                onContentChange={handleContentChange}
+                slideNumber={currentSlideIndex + 1}
+                totalSlides={slides.length}
+                onGrammarStatusChange={handleGrammarStatusChange}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 } 
