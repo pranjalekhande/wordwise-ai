@@ -1,19 +1,19 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
-  Trash2, 
-  Copy, 
-  Zap, 
-  RefreshCw, 
-  Sparkles, 
-  AlertCircle, 
-  CheckCircle2, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Copy,
   Loader2,
-  X
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  RefreshCw,
+  Zap,
+  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,8 +25,9 @@ import { useAppStore } from "@/lib/store"
 import { calculateReadabilityScore, generateId } from "@/lib/utils"
 import { useGrammarCheck } from "@/hooks/use-grammar-check"
 import { GrammarHighlight } from "@/components/documents/grammar-highlight-simple"
+import { GrammarStatusIndicator } from "@/components/editor/grammar-status-indicator"
 import type { Slide } from "@/lib/types"
-import type { ContentVariation, ContentTone } from "@/app/api/generate-variations/route"
+import type { Suggestion } from "@/app/api/generate-variations/route"
 
 interface EnhancedSlideEditorProps {
   projectId: string
@@ -49,7 +50,7 @@ export function EnhancedSlideEditor({ projectId }: EnhancedSlideEditorProps) {
 
   const [content, setContent] = useState("")
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
-  const [variations, setVariations] = useState<ContentVariation[]>([])
+  const [variations, setVariations] = useState<Suggestion[]>([])
   const [selectedVariationId, setSelectedVariationId] = useState<string>("")
   const [showVariations, setShowVariations] = useState(false)
   const [isGeneratingVariations, setIsGeneratingVariations] = useState(false)
@@ -299,9 +300,16 @@ export function EnhancedSlideEditor({ projectId }: EnhancedSlideEditorProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium">
-            Slide {currentSlideIndex + 1} of {slides.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              Slide {currentSlideIndex + 1} of {slides.length}
+            </span>
+            <GrammarStatusIndicator 
+              issueCount={summary.totalIssues}
+              size="sm"
+              showCount={summary.totalIssues > 0}
+            />
+          </div>
           <Button
             variant="outline"
             size="sm"

@@ -26,6 +26,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           id,
           name,
           voice_profile
+        ),
+        documents (
+          id,
+          title,
+          file_name
         )
       `)
       .eq("id", id)
@@ -48,7 +53,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json({ error: "Project not found", details: basicError }, { status: 404 })
       }
 
-      // Manually fetch slides and template
+      // Manually fetch slides, template, and document
       const { data: slides } = await supabase
         .from("slides")
         .select("id, slide_number, content, char_count, tone, created_at, updated_at")
@@ -61,10 +66,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .eq("id", basicProject.template_id)
         .single()
 
+      const { data: document } = await supabase
+        .from("documents")
+        .select("id, title, file_name")
+        .eq("id", basicProject.document_id)
+        .single()
+
       project = {
         ...basicProject,
         slides: slides || [],
         brand_voice_templates: template,
+        documents: document,
       }
     }
 

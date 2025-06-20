@@ -11,7 +11,8 @@ import { GrammarSidebar } from "@/components/editor/grammar-sidebar"
 import { GrammarStatusIndicator } from "@/components/editor/grammar-status-indicator"
 import { InstagramSquarePreview } from "@/components/editor/instagram-square-preview"
 import { FormattingToolbar } from "@/components/editor/formatting-toolbar"
-import type { Slide } from "@/lib/types"
+import { AiStyleSuggestions } from "@/components/editor/ai-style-suggestions"
+import type { Slide, StyleSuggestion } from "@/lib/types"
 
 interface InstagramStyleSlideEditorProps {
   projectId: string
@@ -21,6 +22,7 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
   const {
     slides,
     currentSlide,
+    currentProject,
     isAutoSaving,
     lastSaved,
     setCurrentSlide,
@@ -147,6 +149,43 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
     }, 0)
   }
 
+  const handleApplyStyleSuggestion = (suggestion: StyleSuggestion) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    // Different handling based on suggestion type
+    switch (suggestion.type) {
+      case "emphasis":
+        // Replace original text with suggestion
+        const newContent = content.replace(suggestion.original, suggestion.suggestion)
+        handleContentChange(newContent)
+        break
+        
+      case "hashtag":
+      case "emoji":
+      case "mention":
+        // Add at the end of content with spacing
+        const spacing = content.trim().endsWith('.') || content.trim().endsWith('!') || content.trim().endsWith('?') ? ' ' : ' '
+        handleContentChange(content.trim() + spacing + suggestion.suggestion)
+        break
+        
+      case "structure":
+        // Replace the entire content for structure changes
+        handleContentChange(suggestion.suggestion)
+        break
+        
+      default:
+        // Fallback: replace original with suggestion
+        if (suggestion.original && content.includes(suggestion.original)) {
+          const newContent = content.replace(suggestion.original, suggestion.suggestion)
+          handleContentChange(newContent)
+        } else {
+          // Add at end if original text not found
+          handleContentChange(content.trim() + ' ' + suggestion.suggestion)
+        }
+    }
+  }
+
   const addNewSlide = async () => {
     try {
       const response = await fetch(`/api/projects/${projectId}/slides`, {
@@ -206,6 +245,9 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
   const handleGrammarStatusChange = (issuesCount: number) => {
     setGrammarIssuesCount(issuesCount)
   }
+
+  // Get template type from current project
+  const templateType = (currentProject?.template_type as "NEWS" | "STORY" | "PRODUCT") || "PRODUCT"
 
   return (
     <div className="space-y-6">
@@ -312,13 +354,23 @@ Add emojis with the toolbar! 🎉"
 
         {/* Grammar Sidebar */}
         <div className={showPreview ? 'lg:col-span-4' : 'lg:col-span-3'}>
-          <GrammarSidebar 
-            content={content}
-            onContentChange={handleContentChange}
-            slideNumber={currentSlideIndex + 1}
-            totalSlides={slides.length}
-            onGrammarStatusChange={handleGrammarStatusChange}
-          />
+          <div className="space-y-4">
+            {/* AI Style Suggestions */}
+            <AiStyleSuggestions
+              content={content}
+              templateType={templateType}
+              onApplySuggestion={handleApplyStyleSuggestion}
+            />
+            
+            {/* Grammar Sidebar */}
+            <GrammarSidebar 
+              content={content}
+              onContentChange={handleContentChange}
+              slideNumber={currentSlideIndex + 1}
+              totalSlides={slides.length}
+              onGrammarStatusChange={handleGrammarStatusChange}
+            />
+          </div>
         </div>
       </div>
     </div>

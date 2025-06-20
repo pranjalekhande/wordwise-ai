@@ -123,3 +123,13 @@ export interface GrammarCheckResponse {
     styleIssues: number
   }
 }
+
+export interface StyleSuggestion {
+  id: string
+  type: "emphasis" | "hashtag" | "emoji" | "mention" | "structure"
+  suggestion: string
+  original: string
+  reason: string
+  confidence: number
+  position?: { start: number; end: number }
+}
