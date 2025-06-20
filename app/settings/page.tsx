@@ -1,10 +1,9 @@
 "use client"
-import { User, Bell, Palette, Target, CreditCard, Shield } from "lucide-react"
+import { User, Bell, Palette, CreditCard, Shield } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserProfile } from "@/components/settings/user-profile"
 import { NotificationSettings } from "@/components/settings/notification-settings"
 import { AppearanceSettings } from "@/components/settings/appearance-settings"
-import { WritingGoals } from "@/components/settings/writing-goals"
 import { BillingSettings } from "@/components/settings/billing-settings"
 import { PrivacySettings } from "@/components/settings/privacy-settings"
 
@@ -18,7 +17,7 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -30,10 +29,6 @@ export default function SettingsPage() {
             <TabsTrigger value="appearance" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               Appearance
-            </TabsTrigger>
-            <TabsTrigger value="goals" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Goals
             </TabsTrigger>
             <TabsTrigger value="billing" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
@@ -55,10 +50,6 @@ export default function SettingsPage() {
 
           <TabsContent value="appearance">
             <AppearanceSettings />
-          </TabsContent>
-
-          <TabsContent value="goals">
-            <WritingGoals />
           </TabsContent>
 
           <TabsContent value="billing">

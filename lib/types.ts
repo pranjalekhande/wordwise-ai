@@ -90,11 +90,6 @@ export interface UserSettings {
     push_notifications?: boolean
     weekly_reports?: boolean
   }
-  writing_goals: {
-    daily_word_target?: number
-    weekly_projects?: number
-    preferred_writing_time?: string
-  }
   created_at: string
   updated_at: string
 }

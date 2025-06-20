@@ -25,7 +25,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -336,7 +335,6 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
   }
 
   const readabilityScore = calculateReadabilityScore(content)
-  const dailyGoal = 500
 
   if (!isInitialized) {
     return (
@@ -471,13 +469,9 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
         <div className="flex-1 flex flex-col">
           {/* Tabs */}
           <div className="border-b">
-            <Tabs defaultValue="goals" className="w-full">
+            <Tabs defaultValue="score" className="w-full">
               <div className="flex items-center justify-between px-6 py-2">
-                <TabsList className="grid w-auto grid-cols-3">
-                  <TabsTrigger value="goals" className="flex items-center gap-2">
-                    <Target className="h-4 w-4" />
-                    Goals
-                  </TabsTrigger>
+                <TabsList className="grid w-auto grid-cols-2">
                   <TabsTrigger value="score" className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4" />
                     Overall score
@@ -770,23 +764,6 @@ export function EnhancedDocumentEditor({ document, isNewDocument = false }: Enha
               </CardContent>
             </Card>
           )}
-
-          {/* Writing Goals */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Target className="h-4 w-4" />
-                Daily Goal
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">{wordCount}</span>
-                <Badge variant="outline">{dailyGoal - wordCount} left</Badge>
-              </div>
-              <Progress value={Math.min(100, (wordCount / dailyGoal) * 100)} className="h-2" />
-            </CardContent>
-          </Card>
 
           {/* Readability Score */}
           <Card>

@@ -85,7 +85,6 @@ CREATE TABLE user_settings (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
   preferences JSONB DEFAULT '{}',
   notification_settings JSONB DEFAULT '{}',
-  writing_goals JSONB DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -207,10 +206,9 @@ INSERT INTO slides (project_id, slide_number, title, content, char_count) VALUES
 ('550e8400-e29b-41d4-a716-446655440008', 3, 'Trend 2', 'Bright colors and bold patterns are having a moment. Don not be afraid to make a statement!', 102);
 
 -- Insert user settings
-INSERT INTO user_settings (user_id, preferences, notification_settings, writing_goals) VALUES 
+INSERT INTO user_settings (user_id, preferences, notification_settings) VALUES 
 (
   'demo-user-123',
   '{"theme": "light", "language": "en", "auto_save": true, "spell_check": true}'::jsonb,
-  '{"email_notifications": true, "push_notifications": false, "weekly_reports": true}'::jsonb,
-  '{"daily_word_target": 500, "weekly_projects": 3, "preferred_writing_time": "morning"}'::jsonb
+  '{"email_notifications": true, "push_notifications": false, "weekly_reports": true}'::jsonb
 );
