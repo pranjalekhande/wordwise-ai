@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { SlideEditor } from "@/components/editor/slide-editor"
+import { InstagramStyleSlideEditor } from "@/components/editor/instagram-style-slide-editor"
 import { useAppStore } from "@/lib/store"
 
 export default function EditorPage() {
@@ -81,7 +81,7 @@ export default function EditorPage() {
         </div>
       </div>
 
-      <SlideEditor projectId={params.id as string} />
+      <InstagramStyleSlideEditor projectId={params.id as string} />
     </div>
   )
 }
