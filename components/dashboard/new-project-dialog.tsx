@@ -69,6 +69,7 @@ export function NewProjectDialog({
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStage, setLoadingStage] = useState<string>("")
   const [documents, setDocuments] = useState<Document[]>([])
+  const [selectedDocumentContent, setSelectedDocumentContent] = useState<string>("")
   const { templates, addProject } = useAppStore()
   const router = useRouter()
 
@@ -91,9 +92,53 @@ export function NewProjectDialog({
       const documentExists = documents.some(doc => doc.id === preFilledDocumentId)
       if (documentExists) {
         setDocumentId(preFilledDocumentId)
+        fetchDocumentContent(preFilledDocumentId)
       }
     }
   }, [preFilledDocumentId, documents])
+
+  // Handle document selection change
+  const handleDocumentChange = async (value: string) => {
+    setDocumentId(value)
+    if (value && value !== "none") {
+      await fetchDocumentContent(value)
+    } else {
+      setSelectedDocumentContent("")
+    }
+  }
+
+  const fetchDocumentContent = async (docId: string) => {
+    try {
+      const response = await fetch(`/api/documents/${docId}`)
+      if (response.ok) {
+        const { document } = await response.json()
+        setSelectedDocumentContent(document.content || "")
+      }
+    } catch (error) {
+      console.error("Error fetching document content:", error)
+      setSelectedDocumentContent("")
+    }
+  }
+
+  // Calculate combined source text
+  const getCombinedSourceText = () => {
+    const hasDocument = selectedDocumentContent.trim().length > 0
+    const hasTextInput = sourceText.trim().length > 0
+    
+    if (hasDocument && hasTextInput) {
+      // Test condition: Both document and text input provided
+      return `${selectedDocumentContent.trim()}\n\n---\n\nAdditional Context:\n${sourceText.trim()}`
+    } else if (hasDocument) {
+      return selectedDocumentContent.trim()
+    } else if (hasTextInput) {
+      return sourceText.trim()
+    }
+    return ""
+  }
+
+  // Get combined text length for validation
+  const combinedTextLength = getCombinedSourceText().length
+  const isTextValid = combinedTextLength >= 50
 
   const fetchDocuments = async () => {
     try {
@@ -117,6 +162,7 @@ export function NewProjectDialog({
     setTemplateId("")
     setDocumentId(preFilledDocumentId || "")
     setTargetAudience("")
+    setSelectedDocumentContent("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,7 +195,7 @@ export function NewProjectDialog({
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
-          source_text: sourceText.trim(),
+          source_text: getCombinedSourceText(),
           template_type: templateType,
           slide_count: slideCount,
           template_id: processedTemplateId,
@@ -198,7 +244,7 @@ export function NewProjectDialog({
           <DialogHeader>
             <DialogTitle>Create New InstaCarousel</DialogTitle>
             <DialogDescription>
-              Create a new Instagram carousel from your content. Paste your text, choose a template type, and let AI generate your slides.
+              Create a new Instagram carousel from your content. Select a document, add text, or combine both. Choose a template type and let AI generate your slides.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -215,20 +261,43 @@ export function NewProjectDialog({
 
             <div className="grid gap-2">
               <Label htmlFor="source-text">
-                Source Text <span className="text-red-500">*</span>
-                <span className="ml-2 text-sm text-muted-foreground">({sourceText.length}/50 min)</span>
+                Source Text 
+                {selectedDocumentContent && (
+                  <span className="ml-2 text-sm text-green-600">
+                    + Document Content ({selectedDocumentContent.length} chars)
+                  </span>
+                )}
+                <span className="ml-2 text-sm text-muted-foreground">
+                  ({combinedTextLength}/{selectedDocumentContent ? "Combined" : "50 min"})
+                </span>
               </Label>
               <Textarea
                 id="source-text"
                 value={sourceText}
                 onChange={(e) => setSourceText(e.target.value)}
-                placeholder="Paste your content here (minimum 50 characters)..."
+                placeholder={
+                  selectedDocumentContent
+                    ? "Add additional context or instructions (optional)..."
+                    : "Paste your content here (minimum 50 characters)..."
+                }
                 className="h-32 resize-none"
-                required
               />
-              {sourceText.length > 0 && sourceText.length < 50 && (
+              {selectedDocumentContent && sourceText && (
+                <div className="text-sm p-2 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-blue-800 font-medium">✓ Test Condition: Document + Additional Text</p>
+                  <p className="text-blue-600 text-xs">
+                    Will combine document content ({selectedDocumentContent.length} chars) with your additional text ({sourceText.length} chars)
+                  </p>
+                </div>
+              )}
+              {!isTextValid && combinedTextLength > 0 && (
                 <p className="text-sm text-red-500">
-                  Need {50 - sourceText.length} more characters (minimum 50 required)
+                  Need {50 - combinedTextLength} more characters (minimum 50 required)
+                </p>
+              )}
+              {selectedDocumentContent && !sourceText && (
+                <p className="text-sm text-green-600">
+                  Using document content only ({selectedDocumentContent.length} characters)
                 </p>
               )}
             </div>
@@ -284,7 +353,7 @@ export function NewProjectDialog({
 
             <div className="grid gap-2">
               <Label htmlFor="document">Source Document (Optional)</Label>
-              <Select value={documentId} onValueChange={setDocumentId}>
+              <Select value={documentId} onValueChange={handleDocumentChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a document" />
                 </SelectTrigger>
@@ -330,7 +399,7 @@ export function NewProjectDialog({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!title.trim() || sourceText.trim().length < 50 || isLoading}>
+            <Button type="submit" disabled={!title.trim() || !isTextValid || isLoading}>
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isLoading ? loadingStage : "Create Carousel"}
             </Button>
