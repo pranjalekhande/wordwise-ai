@@ -26,6 +26,11 @@ export async function GET() {
           id,
           name,
           voice_profile
+        ),
+        documents (
+          id,
+          title,
+          file_name
         )
       `)
       .eq("user_id", userId)
@@ -46,8 +51,8 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch projects", details: basicError }, { status: 500 })
       }
 
-      // Manually fetch slides for each project
-      const projectsWithSlides = await Promise.all(
+      // Manually fetch slides, templates, and documents for each project
+      const projectsWithRelations = await Promise.all(
         (basicProjects || []).map(async (project: any) => {
           const { data: slides } = await supabase
             .from("slides")
@@ -61,15 +66,22 @@ export async function GET() {
             .eq("id", project.template_id)
             .single()
 
+          const { data: document } = await supabase
+            .from("documents")
+            .select("id, title, file_name")
+            .eq("id", project.document_id)
+            .single()
+
           return {
             ...project,
             slides: slides || [],
             brand_voice_templates: template,
+            documents: document,
           }
         }),
       )
 
-      projects = projectsWithSlides
+      projects = projectsWithRelations
     }
 
     return NextResponse.json({ projects: projects || [] })
@@ -147,6 +159,7 @@ export async function POST(request: NextRequest) {
         description: finalDescription,
         template_id: template_id || null,
         document_id: document_id || null,
+        template_type: template_type || 'STORY',
         target_audience: target_audience || null,
       })
       .select()

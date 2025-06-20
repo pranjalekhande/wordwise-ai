@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { FileText, MoreHorizontal, Search, Download, Trash2, Edit, Clock, Grid3X3 } from "lucide-react"
+import { FileText, MoreHorizontal, Search, Download, Trash2, Edit, Clock, Grid3X3, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ import { NewProjectDialog } from "./new-project-dialog"
 import { useRouter } from "next/navigation"
 import { DocumentUpload } from "@/components/documents/document-upload"
 import { createCarouselFromDocument } from "@/lib/document-to-carousel"
+import { TemplateTypeBadge } from "@/components/ui/template-type-badge"
 import type { Document } from "@/lib/types"
 
 export function ProjectList() {
@@ -92,6 +93,11 @@ export function ProjectList() {
     } catch (error) {
       console.error("Error deleting project:", error)
     }
+  }
+
+  const handleSourceDocumentClick = (documentId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/documents/${documentId}`)
   }
 
   const handleDocumentDelete = async (documentId: string, e: React.MouseEvent) => {
@@ -209,10 +215,39 @@ export function ProjectList() {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {project.slides?.length || 0} slides • Created {formatDate(project.created_at)}
                   </p>
+                  
+                  {/* Source Document Link */}
+                  {project.documents && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">Source:</span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-xs text-blue-600 hover:text-blue-700"
+                        onClick={(e) => handleSourceDocumentClick(project.documents!.id, e)}
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        {project.documents.title}
+                        <ExternalLink className="h-3 w-3 ml-1" />
+                      </Button>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
-                      {project.template_id ? "Template Applied" : "No Template"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {/* Template Type Badge */}
+                      {project.template_type && (
+                        <TemplateTypeBadge 
+                          templateType={project.template_type}
+                          showIcon={true}
+                          size="sm"
+                        />
+                      )}
+                      {/* Template Applied Badge */}
+                      <Badge variant="outline" className="text-xs">
+                        {project.template_id ? "Template Applied" : "No Template"}
+                      </Badge>
+                    </div>
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded-full bg-green-500" />
                       <span className="text-xs text-muted-foreground">Saved</span>

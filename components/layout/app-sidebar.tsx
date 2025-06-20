@@ -20,22 +20,16 @@ import { Button } from "@/components/ui/button"
 
 const navigation = [
   {
-    title: "Dashboard",
+    title: "InstaCarousels",
     url: "/",
-    icon: Home,
-    description: "Overview & analytics"
+    icon: FileText,
+    description: "Create & manage carousels"
   },
   {
     title: "Documents",
     url: "/documents",
     icon: PenTool,
     description: "Write & edit content"
-  },
-  {
-    title: "InstaCarousels",
-    url: "/projects",
-    icon: FileText,
-    description: "Create carousels"
   },
   {
     title: "Templates",

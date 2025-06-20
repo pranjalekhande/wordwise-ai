@@ -11,6 +11,7 @@ export interface Suggestion {
   id: string
   content: string
   char_count: number
+  tone?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -61,7 +62,8 @@ Provide ONLY the rewritten content, no explanations.`
           suggestions.push({
             id: `${tone}-${Date.now()}`,
             content: cleanContent,
-            char_count: cleanContent.length
+            char_count: cleanContent.length,
+            tone: tone
           })
         }
       } catch (error) {
