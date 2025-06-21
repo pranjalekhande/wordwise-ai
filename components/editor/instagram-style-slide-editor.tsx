@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight, Plus, Trash2, Copy, Eye, EyeOff, Instagram } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Trash2, Copy, Eye, EyeOff, Instagram, Download, Loader2, Share, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,6 +14,7 @@ import { GrammarStatusIndicator } from "@/components/editor/grammar-status-indic
 import { InstagramSquarePreview } from "@/components/editor/instagram-square-preview"
 import { FormattingToolbar } from "@/components/editor/formatting-toolbar"
 import { AiStyleSuggestions } from "@/components/editor/ai-style-suggestions"
+import { shareCarouselToInstagram, copyCarouselToClipboard, showCaptionForManualCopy, type SlideImageData } from "@/lib/instagram-sharing"
 import type { Slide, StyleSuggestion } from "@/lib/types"
 
 interface InstagramStyleSlideEditorProps {
@@ -40,6 +41,8 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
   const [grammarIssuesCount, setGrammarIssuesCount] = useState(0)
   const [showPreview, setShowPreview] = useState(true)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [isDownloadingImages, setIsDownloadingImages] = useState(false)
+  const [isSharingToInstagram, setIsSharingToInstagram] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -249,6 +252,182 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
     setGrammarIssuesCount(issuesCount)
   }
 
+  const handleDownloadImages = async () => {
+    if (!currentProject || slides.length === 0) return
+
+    setIsDownloadingImages(true)
+    try {
+      console.log(`Starting batch image generation for ${slides.length} slides...`)
+      const response = await fetch(`/api/projects/${projectId}/export-images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          format: 'png',
+          includeZip: false
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to generate images')
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.images && data.images.length > 0) {
+        console.log(`Generated ${data.images.length} images, starting downloads...`)
+        
+        // Create a slight delay between downloads to prevent browser blocking
+        for (let i = 0; i < data.images.length; i++) {
+          const imageData = data.images[i]
+          
+          try {
+            const link = document.createElement('a')
+            link.href = imageData.imageUrl
+            link.download = imageData.fileName
+            link.style.display = 'none'
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            
+            console.log(`Downloaded: ${imageData.fileName}`)
+            
+            // Small delay between downloads (reduced for better UX)
+            if (i < data.images.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 50))
+            }
+          } catch (downloadError) {
+            console.error(`Failed to download ${imageData.fileName}:`, downloadError)
+          }
+        }
+        
+        console.log(`✅ Successfully downloaded ${data.images.length} images from "${currentProject.title}"`)
+        
+        // Success feedback (you could replace this with a toast notification)
+        const message = `Downloaded ${data.images.length} image${data.images.length === 1 ? '' : 's'} successfully!`
+        alert(message)
+      } else {
+        throw new Error('No images were generated')
+      }
+    } catch (error) {
+      console.error('Download failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Failed to download images: ${errorMessage}`)
+    } finally {
+      setIsDownloadingImages(false)
+    }
+  }
+
+  const handleShareToInstagram = async () => {
+    if (!currentProject || slides.length === 0) return
+
+    setIsSharingToInstagram(true)
+    try {
+      console.log(`Preparing to share ${slides.length} slides to Instagram...`)
+      
+      // Generate images using API endpoint (server-side Sharp processing)
+      const response = await fetch(`/api/projects/${projectId}/export-images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          format: 'png',
+          includeZip: false
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to generate images for sharing')
+      }
+
+      const data = await response.json()
+      
+      if (!data.success || !data.images || data.images.length === 0) {
+        throw new Error('No images were generated for sharing')
+      }
+
+      // Convert API response to SlideImageData format
+      const slideImages: SlideImageData[] = data.images.map((img: any) => ({
+        slideId: img.slideId,
+        slideNumber: img.slideNumber,
+        content: img.content,
+        imageBuffer: null, // We'll use the imageUrl instead
+        fileName: img.fileName,
+        imageUrl: img.imageUrl // Add the base64 data URL
+      }))
+
+      // Share to Instagram
+      const result = await shareCarouselToInstagram(slideImages, currentProject, {
+        useCarouselCaption: true,
+        hashtags: currentProject.template_type ? [`#${currentProject.template_type.toLowerCase()}`] : []
+      })
+
+      if (result.success) {
+        console.log(`✅ Successfully initiated Instagram sharing (${result.shareMethod})`)
+        
+        // Show success message with instructions
+        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        
+        let message: string
+        if (isMobile) {
+          message = "Opening Instagram app... If the app doesn't open, it will redirect to Instagram web."
+        } else {
+          // Desktop with clipboard feedback
+          if (result.captionCopied) {
+            message = "Instagram opened in new tab! Caption copied to clipboard - paste it when uploading your images."
+          } else {
+            message = "Instagram opened in new tab! ⚠️ Couldn't copy caption automatically - you may need to copy it manually."
+          }
+        }
+        
+        alert(message)
+      } else {
+        throw new Error(result.error || 'Sharing failed')
+      }
+    } catch (error) {
+      console.error('Instagram sharing failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Failed to share to Instagram: ${errorMessage}`)
+    } finally {
+      setIsSharingToInstagram(false)
+    }
+  }
+
+  const handleCopyCaption = async () => {
+    if (!currentProject || slides.length === 0) return
+
+    try {
+      const slideImages: SlideImageData[] = slides.map(slide => ({
+        slideId: slide.id,
+        slideNumber: slide.slide_number,
+        content: slide.content,
+        fileName: `slide_${slide.slide_number}.png`
+      }))
+
+      const copySuccess = await copyCarouselToClipboard(slideImages, currentProject, {
+        useCarouselCaption: true,
+        hashtags: currentProject.template_type ? [`#${currentProject.template_type.toLowerCase()}`] : []
+      })
+
+      if (copySuccess) {
+        alert('✅ Caption copied to clipboard!')
+      } else {
+        // Show manual copy dialog as fallback
+        showCaptionForManualCopy(slideImages, currentProject, {
+          useCarouselCaption: true,
+          hashtags: currentProject.template_type ? [`#${currentProject.template_type.toLowerCase()}`] : []
+        })
+      }
+    } catch (error) {
+      console.error('Copy caption failed:', error)
+      alert('Failed to copy caption. Please try again.')
+    }
+  }
+
   // Get template type from current project
   const templateType = (currentProject?.template_type as "NEWS" | "STORY" | "PRODUCT") || "PRODUCT"
 
@@ -371,6 +550,64 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
                 </div>
               </PopoverContent>
             </Popover>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDownloadImages}
+                  disabled={isDownloadingImages || slides.length === 0}
+                >
+                  {isDownloadingImages ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isDownloadingImages ? `Generating ${slides.length} Images...` : `Download All Images (${slides.length})`}</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleShareToInstagram}
+                  disabled={isSharingToInstagram || slides.length === 0}
+                  className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                >
+                  {isSharingToInstagram ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Share className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isSharingToInstagram ? 'Preparing for Instagram...' : 'Share to Instagram'}</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCopyCaption}
+                  disabled={slides.length === 0}
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Copy Caption</p>
+              </TooltipContent>
+            </Tooltip>
             
             <Tooltip>
               <TooltipTrigger asChild>
