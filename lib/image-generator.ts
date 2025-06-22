@@ -46,7 +46,7 @@ export interface SlideImageData {
 }
 
 /**
- * Escape XML special characters for safe SVG content
+ * Escape XML special characters for safe SVG content (preserve emojis)
  */
 function escapeXML(text: string): string {
   if (!text) return ''
@@ -57,14 +57,146 @@ function escapeXML(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;')
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u0084\u0086-\u009F]/g, '') // Remove control characters
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u0084\u0086-\u009F]/g, '') // Remove control characters only
+    // Emojis are preserved and should render properly in modern SVG viewers
+}
+
+/**
+ * Parse and convert markdown formatting to clean text with formatting info
+ */
+function parseFormattedText(text: string): Array<{
+  text: string
+  bold: boolean
+  italic: boolean
+  isHashtag: boolean
+}> {
+  if (!text || typeof text !== 'string') return [{ text: '', bold: false, italic: false, isHashtag: false }]
+  
+  const segments: Array<{
+    text: string
+    bold: boolean
+    italic: boolean
+    isHashtag: boolean
+  }> = []
+  
+  let processedText = text
+  let currentPos = 0
+  
+  // Find all markdown patterns
+  const boldRegex = /\*\*(.*?)\*\*/g
+  const italicRegex = /\*([^*]+?)\*/g
+  const hashtagRegex = /#(\w+)/g
+  
+  const allMatches: Array<{
+    start: number
+    end: number
+    content: string
+    type: 'bold' | 'italic' | 'hashtag'
+  }> = []
+  
+  // Find bold matches
+  let match: RegExpExecArray | null
+  while ((match = boldRegex.exec(text)) !== null) {
+    allMatches.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      content: match[1],
+      type: 'bold'
+    })
+  }
+  
+  // Find italic matches (skip if inside bold)
+  boldRegex.lastIndex = 0 // Reset regex
+  while ((match = italicRegex.exec(text)) !== null) {
+    const isInsideBold = allMatches.some(boldMatch => 
+      boldMatch.type === 'bold' && 
+      match!.index >= boldMatch.start && 
+      match!.index + match![0].length <= boldMatch.end
+    )
+    if (!isInsideBold) {
+      allMatches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        content: match[1],
+        type: 'italic'
+      })
+    }
+  }
+  
+  // Find hashtag matches
+  while ((match = hashtagRegex.exec(text)) !== null) {
+    allMatches.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      content: match[0], // Keep the # symbol
+      type: 'hashtag'
+    })
+  }
+  
+  // Sort by position
+  allMatches.sort((a, b) => a.start - b.start)
+  
+  // Build segments
+  let pos = 0
+  
+  for (const match of allMatches) {
+    // Add text before this match
+    if (match.start > pos) {
+      const beforeText = text.substring(pos, match.start)
+      if (beforeText.trim()) {
+        segments.push({
+          text: escapeXML(beforeText),
+          bold: false,
+          italic: false,
+          isHashtag: false
+        })
+      }
+    }
+    
+    // Add the formatted text
+    segments.push({
+      text: escapeXML(match.content),
+      bold: match.type === 'bold',
+      italic: match.type === 'italic',
+      isHashtag: match.type === 'hashtag'
+    })
+    
+    pos = match.end
+  }
+  
+  // Add remaining text
+  if (pos < text.length) {
+    const remainingText = text.substring(pos)
+    if (remainingText.trim()) {
+      segments.push({
+        text: escapeXML(remainingText),
+        bold: false,
+        italic: false,
+        isHashtag: false
+      })
+    }
+  }
+  
+  // If no formatting found, return the whole text
+  if (segments.length === 0) {
+    segments.push({
+      text: escapeXML(text),
+      bold: false,
+      italic: false,
+      isHashtag: false
+    })
+  }
+  
+  return segments
 }
 
 /**
  * Break text into multiple lines for better SVG display
  */
-function wrapTextForSVG(text: string, maxCharsPerLine: number = 40): string[] {
-  const words = text.split(' ')
+function wrapTextForSVG(text: string, maxCharsPerLine: number = 35): string[] {
+  if (!text || typeof text !== 'string') return ['']
+  
+  const words = text.trim().split(/\s+/)
   const lines: string[] = []
   let currentLine = ''
 
@@ -78,7 +210,7 @@ function wrapTextForSVG(text: string, maxCharsPerLine: number = 40): string[] {
         lines.push(currentLine)
         currentLine = word
       } else {
-        // Word is too long, add it anyway but try to break it
+        // Word is too long, break it
         if (word.length > maxCharsPerLine) {
           lines.push(word.substring(0, maxCharsPerLine))
           currentLine = word.substring(maxCharsPerLine)
@@ -93,273 +225,475 @@ function wrapTextForSVG(text: string, maxCharsPerLine: number = 40): string[] {
     lines.push(currentLine)
   }
 
-  return lines.slice(0, 8) // Limit to 8 lines max for readability
+  // Limit to 6 lines max for better readability
+  return lines.slice(0, 6)
 }
 
 /**
- * Parse markdown-style formatting in content
- * Supports **bold**, *italic*, #hashtags, @mentions
+ * Generate SVG tspan elements with proper formatting
  */
-function parseMarkdownContent(content: string): {
+function generateFormattedSVGText(segments: Array<{
   text: string
-  formatting: Array<{
-    type: 'bold' | 'italic' | 'hashtag' | 'mention'
-    start: number
-    end: number
-    originalText: string
-  }>
-} {
-  const formatting: Array<{
-    type: 'bold' | 'italic' | 'hashtag' | 'mention'
-    start: number
-    end: number
-    originalText: string
-  }> = []
+  bold: boolean
+  italic: boolean
+  isHashtag: boolean
+}>, centerX: number, startY: number, lineHeight: number): string {
   
-  let parsedText = content
-  let offset = 0
-
-  // Parse **bold** text
-  const boldRegex = /\*\*(.*?)\*\*/g
-  let boldMatch
-  while ((boldMatch = boldRegex.exec(content)) !== null) {
-    const start = boldMatch.index - offset
-    const end = start + boldMatch[1].length
-    formatting.push({
-      type: 'bold',
-      start,
-      end,
-      originalText: boldMatch[1]
-    })
-    parsedText = parsedText.replace(boldMatch[0], boldMatch[1])
-    offset += 4 // Remove ** at start and end
-  }
-
-  // Parse *italic* text
-  const italicRegex = /\*(.*?)\*/g
-  let italicMatch
-  while ((italicMatch = italicRegex.exec(parsedText)) !== null) {
-    const start = italicMatch.index
-    const end = start + italicMatch[1].length
-    formatting.push({
-      type: 'italic',
-      start,
-      end,
-      originalText: italicMatch[1]
-    })
-    parsedText = parsedText.replace(italicMatch[0], italicMatch[1])
-  }
-
-  // Parse #hashtags
-  const hashtagRegex = /#(\w+)/g
-  let hashtagMatch
-  while ((hashtagMatch = hashtagRegex.exec(parsedText)) !== null) {
-    formatting.push({
-      type: 'hashtag',
-      start: hashtagMatch.index,
-      end: hashtagMatch.index + hashtagMatch[0].length,
-      originalText: hashtagMatch[0]
-    })
-  }
-
-  // Parse @mentions
-  const mentionRegex = /@(\w+)/g
-  let mentionMatch
-  while ((mentionMatch = mentionRegex.exec(parsedText)) !== null) {
-    formatting.push({
-      type: 'mention',
-      start: mentionMatch.index,
-      end: mentionMatch.index + mentionMatch[0].length,
-      originalText: mentionMatch[0]
-    })
-  }
-
-  return { text: parsedText, formatting }
+  if (segments.length === 0) return ''
+  
+  // For now, we'll combine all segments into lines and apply basic formatting
+  // SVG has limited support for mixed formatting within a single text element
+  const allText = segments.map(seg => seg.text).join('')
+  const lines = wrapTextForSVG(allText, 30)
+  
+  const textLines = lines.map((line, index) => {
+    const yPosition = startY + (index * lineHeight)
+    return `<tspan x="${centerX}" y="${yPosition}">${escapeXML(line)}</tspan>`
+  }).join('')
+  
+  return textLines
 }
 
 /**
- * Break text into lines that fit within the image width
- * Considers font size and available width
- */
-function wrapText(text: string, maxWidth: number, fontSize: number): string[] {
-  const words = text.split(' ')
-  const lines: string[] = []
-  let currentLine = ''
-
-  // Approximate character width (adjust based on font)
-  const avgCharWidth = fontSize * 0.6
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word
-    const estimatedWidth = testLine.length * avgCharWidth
-
-    if (estimatedWidth <= maxWidth) {
-      currentLine = testLine
-    } else {
-      if (currentLine) {
-        lines.push(currentLine)
-        currentLine = word
-      } else {
-        // Word is too long, break it
-        lines.push(word)
-      }
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine)
-  }
-
-  return lines
-}
-
-/**
- * Create SVG markup for slide content with proper XML escaping
+ * Create SVG markup for slide content with proper formatting
  */
 function createSlideSVG(slide: Slide, project?: CarouselProject): string {
+  console.log(`Creating SVG for slide ${slide.slide_number}...`)
+  
+  // Validate inputs
+  if (!slide) {
+    throw new Error('Slide data is required')
+  }
+  
+  if (!slide.content) {
+    console.warn(`Slide ${slide.slide_number} has no content, using placeholder`)
+  }
+  
   const centerX = INSTAGRAM_SPECS.SQUARE_SIZE / 2
   const centerY = INSTAGRAM_SPECS.SQUARE_SIZE / 2
   
-  // Escape and wrap the content safely
-  const safeContent = escapeXML(slide.content || '')
-  const contentLines = wrapTextForSVG(safeContent, 35) // Shorter lines for better display
-  const lineHeight = INSTAGRAM_SPECS.FONT_SIZES.content * 1.3
+  // Process content with formatting
+  const rawContent = slide.content || 'No content'
+  console.log(`Processing content: "${rawContent.substring(0, 50)}..."`)
   
-  // Calculate starting Y position to center the text block
-  const totalTextHeight = contentLines.length * lineHeight
-  const startY = centerY - (totalTextHeight / 2) + (lineHeight / 2)
+  // Parse formatted segments
+  const formattedSegments = parseFormattedText(rawContent)
+  console.log(`Formatted segments:`, formattedSegments.length)
+  console.log('DEBUG segments:', formattedSegments.map(s => ({ 
+    text: `"${s.text.substring(0, 20)}"`, 
+    bold: s.bold, 
+    italic: s.italic, 
+    hashtag: s.isHashtag 
+  })))
+  
+  // Create properly formatted text with actual bold/italic
+  const processedContent = createFormattedSVGContent(formattedSegments, centerX, centerY)
+  
+  // Safely escape project data
+  const safeTemplateType = project?.template_type ? escapeXML(project.template_type.toString()) : ''
+  const slideNumberStr = slide.slide_number?.toString() || '1'
 
-  // Generate text lines
-  const textLines = contentLines.map((line, index) => 
-    `<tspan x="${centerX}" dy="${index === 0 ? 0 : lineHeight}">${escapeXML(line)}</tspan>`
-  ).join('')
-
-  // Safely escape template type
-  const safeTemplateType = project?.template_type ? escapeXML(project.template_type) : ''
-
-  return `<svg width="${INSTAGRAM_SPECS.SQUARE_SIZE}" height="${INSTAGRAM_SPECS.SQUARE_SIZE}" 
-       xmlns="http://www.w3.org/2000/svg" 
-       viewBox="0 0 ${INSTAGRAM_SPECS.SQUARE_SIZE} ${INSTAGRAM_SPECS.SQUARE_SIZE}"
-       style="background-color: ${INSTAGRAM_SPECS.COLORS.background};">
+  // Create the SVG with improved structure
+  const svgContent = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${INSTAGRAM_SPECS.SQUARE_SIZE}" height="${INSTAGRAM_SPECS.SQUARE_SIZE}" 
+     xmlns="http://www.w3.org/2000/svg" 
+     viewBox="0 0 ${INSTAGRAM_SPECS.SQUARE_SIZE} ${INSTAGRAM_SPECS.SQUARE_SIZE}">
   
   <!-- Background -->
   <rect x="0" y="0" 
         width="${INSTAGRAM_SPECS.SQUARE_SIZE}" 
         height="${INSTAGRAM_SPECS.SQUARE_SIZE}" 
-        fill="${INSTAGRAM_SPECS.COLORS.background}" 
-        stroke="none"/>
+        fill="${INSTAGRAM_SPECS.COLORS.background}"/>
   
   <!-- Slide Number -->
   <text x="${INSTAGRAM_SPECS.SQUARE_SIZE - INSTAGRAM_SPECS.PADDING}" 
         y="${INSTAGRAM_SPECS.PADDING + 30}" 
-        font-family="Arial, Helvetica, sans-serif" 
+        font-family="Arial, sans-serif" 
         font-size="${INSTAGRAM_SPECS.FONT_SIZES.slideNumber}" 
-        font-weight="normal"
         fill="${INSTAGRAM_SPECS.COLORS.secondary}" 
-        text-anchor="end"
-        dominant-baseline="middle">${slide.slide_number}</text>
+        text-anchor="end">${slideNumberStr}</text>
   
-  <!-- Main Content -->
-  <text x="${centerX}" 
-        y="${startY}" 
-        font-family="Arial, Helvetica, sans-serif" 
-        font-size="${INSTAGRAM_SPECS.FONT_SIZES.content}" 
-        font-weight="normal"
-        fill="${INSTAGRAM_SPECS.COLORS.text}" 
-        text-anchor="middle" 
-        dominant-baseline="middle">
-    ${textLines}
-  </text>
+  <!-- Main Content with Formatting -->
+  ${processedContent}
   
   ${safeTemplateType ? `
   <!-- Template Type Badge -->
   <rect x="${INSTAGRAM_SPECS.PADDING - 10}" 
-        y="${INSTAGRAM_SPECS.PADDING + 10}" 
-        width="${safeTemplateType.length * 8 + 20}" 
-        height="40" 
-        rx="20" ry="20" 
+        y="${INSTAGRAM_SPECS.PADDING - 10}" 
+        width="${Math.max(safeTemplateType.length * 10 + 20, 80)}" 
+        height="30" 
+        rx="15" 
         fill="${INSTAGRAM_SPECS.COLORS.hashtag}" 
         opacity="0.1"/>
   <text x="${INSTAGRAM_SPECS.PADDING}" 
-        y="${INSTAGRAM_SPECS.PADDING + 30}" 
-        font-family="Arial, Helvetica, sans-serif" 
-        font-size="16" 
+        y="${INSTAGRAM_SPECS.PADDING + 5}" 
+        font-family="Arial, sans-serif" 
+        font-size="14" 
         font-weight="bold" 
-        fill="${INSTAGRAM_SPECS.COLORS.hashtag}"
-        dominant-baseline="middle">${safeTemplateType}</text>
+        fill="${INSTAGRAM_SPECS.COLORS.hashtag}">${safeTemplateType}</text>
   ` : ''}
   
 </svg>`
+
+  console.log(`✅ SVG created for slide ${slide.slide_number}, length: ${svgContent.length}`)
+  return svgContent
 }
 
 /**
- * Generate a single slide image
+ * Get formatting properties for a text range
+ */
+function getFormattingForRange(
+  start: number,
+  end: number,
+  formatRanges: Array<{
+    start: number
+    end: number
+    bold: boolean
+    italic: boolean
+    isHashtag: boolean
+  }>
+): { bold: boolean; italic: boolean; isHashtag: boolean } {
+  let bold = false
+  let italic = false
+  let isHashtag = false
+  
+  for (const range of formatRanges) {
+    // Check if ranges overlap
+    if (range.start < end && range.end > start) {
+      if (range.bold) bold = true
+      if (range.italic) italic = true
+      if (range.isHashtag) isHashtag = true
+    }
+  }
+  
+  return { bold, italic, isHashtag }
+}
+
+/**
+ * Create formatted SVG content with proper bold, italic, and hashtag styling
+ */
+function createFormattedSVGContent(
+  segments: Array<{
+    text: string
+    bold: boolean
+    italic: boolean
+    isHashtag: boolean
+  }>,
+  centerX: number,
+  centerY: number
+): string {
+  
+  if (segments.length === 0) {
+    return `<text x="${centerX}" y="${centerY}" font-family="Arial, sans-serif" font-size="${INSTAGRAM_SPECS.FONT_SIZES.content}" fill="${INSTAGRAM_SPECS.COLORS.text}" text-anchor="middle">No content</text>`
+  }
+  
+  console.log('DEBUG: Creating SVG with segments:', segments.map(s => ({ text: s.text.substring(0, 20), bold: s.bold, italic: s.italic, hashtag: s.isHashtag })))
+  
+  // Better approach: Combine all segments into full text, then apply smart word-based wrapping
+  // while preserving formatting information
+  
+  // First, rebuild the full text and track formatting positions
+  let fullText = ''
+  const formatRanges: Array<{
+    start: number
+    end: number
+    bold: boolean
+    italic: boolean
+    isHashtag: boolean
+  }> = []
+  
+  for (const segment of segments) {
+    const startPos = fullText.length
+    fullText += segment.text
+    const endPos = fullText.length
+    
+    if (segment.bold || segment.italic || segment.isHashtag) {
+      formatRanges.push({
+        start: startPos,
+        end: endPos,
+        bold: segment.bold,
+        italic: segment.italic,
+        isHashtag: segment.isHashtag
+      })
+    }
+  }
+  
+  // Smart word-based line wrapping
+  const maxCharsPerLine = 40 // Increased for better balance
+  const words = fullText.split(/(\s+)/) // Split on spaces but keep them
+  const lines: Array<{
+    text: string
+    bold: boolean
+    italic: boolean
+    isHashtag: boolean
+  }> = []
+  
+  let currentLine = ''
+  let currentLineStart = 0
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]
+    if (!word) continue // Skip empty strings
+    
+    // Handle hashtags specially - they should start new lines
+    if (word.trim().startsWith('#')) {
+      // Finish current line if it has content
+      if (currentLine.trim().length > 0) {
+        const lineEnd = currentLineStart + currentLine.length
+        const formatting = getFormattingForRange(currentLineStart, lineEnd, formatRanges)
+        lines.push({
+          text: currentLine.trim(),
+          ...formatting
+        })
+      }
+      
+      // Add hashtag on its own line
+      lines.push({
+        text: word.trim(),
+        bold: false,
+        italic: false,
+        isHashtag: true
+      })
+      
+      // Reset for next line
+      currentLine = ''
+      currentLineStart = fullText.indexOf(word.trim(), currentLineStart) + word.trim().length
+      continue
+    }
+    
+    // Skip whitespace-only words unless they're needed for spacing
+    if (word.match(/^\s+$/)) {
+      // Add space to current line if it has content
+      if (currentLine.length > 0) {
+        currentLine += ' '
+      }
+      continue
+    }
+    
+    // Test if adding this word would exceed the line limit
+    const testLine = currentLine.length > 0 ? currentLine + ' ' + word : word
+    
+    if (testLine.length > maxCharsPerLine && currentLine.trim().length > 0) {
+      // Finish current line
+      const lineEnd = currentLineStart + currentLine.length
+      const formatting = getFormattingForRange(currentLineStart, lineEnd, formatRanges)
+      lines.push({
+        text: currentLine.trim(),
+        ...formatting
+      })
+      
+      // Start new line with current word
+      currentLine = word
+      currentLineStart = fullText.indexOf(word, currentLineStart)
+    } else {
+      // Add word to current line
+      currentLine = testLine
+    }
+  }
+  
+  // Add the last line
+  if (currentLine.trim().length > 0) {
+    const lineEnd = currentLineStart + currentLine.length
+    const formatting = getFormattingForRange(currentLineStart, lineEnd, formatRanges)
+    lines.push({
+      text: currentLine.trim(),
+      ...formatting
+    })
+  }
+  
+  // Limit to 6 lines max
+  const limitedLines = lines.slice(0, 6)
+  
+  // Calculate positioning
+  const lineHeight = 55
+  const totalHeight = limitedLines.length * lineHeight
+  const startY = centerY - (totalHeight / 2) + (lineHeight / 2)
+  
+  // Create SVG elements for each line with preserved formatting
+  const svgElements: string[] = []
+  
+  limitedLines.forEach((line, lineIndex) => {
+    const yPosition = startY + (lineIndex * lineHeight)
+    
+    // Apply formatting based on the line's properties
+    let fontWeight = 'normal'
+    let textColor = INSTAGRAM_SPECS.COLORS.text as string
+    let fontSize = INSTAGRAM_SPECS.FONT_SIZES.content as number
+    let fontStyle = 'normal'
+    
+    if (line.bold) {
+      fontWeight = 'bold'
+    }
+    
+    if (line.italic && !line.bold) {
+      fontStyle = 'italic'
+    }
+    
+    if (line.isHashtag) {
+      textColor = INSTAGRAM_SPECS.COLORS.hashtag
+      fontSize = INSTAGRAM_SPECS.FONT_SIZES.hashtag
+    }
+    
+    console.log(`DEBUG: Line ${lineIndex + 1}: "${line.text.trim()}" - Bold: ${line.bold}, Italic: ${line.italic}, Hashtag: ${line.isHashtag}`)
+    
+    // OVERRIDE: If line contains only hashtags, force hashtag formatting
+    if (line.text.trim().startsWith('#')) {
+      line.bold = false
+      line.italic = false
+      line.isHashtag = true
+    }
+    
+    svgElements.push(`
+      <text x="${centerX}" y="${yPosition}" 
+            font-family="Arial, sans-serif" 
+            font-size="${line.isHashtag ? INSTAGRAM_SPECS.FONT_SIZES.hashtag : fontSize}" 
+            font-weight="${line.isHashtag ? 'normal' : fontWeight}"
+            font-style="${fontStyle}"
+            fill="${line.isHashtag ? INSTAGRAM_SPECS.COLORS.hashtag : textColor}" 
+            text-anchor="middle">${escapeXML(line.text.trim())}</text>
+    `)
+  })
+  
+  return svgElements.join('')
+}
+
+/**
+ * Generate a single slide image with improved error handling
  */
 export async function generateSlideImage(
   slide: Slide,
   project?: CarouselProject
 ): Promise<SlideImageData> {
+  console.log(`🖼️ Generating image for slide ${slide.slide_number}...`)
+  
   try {
+    // Validate slide data
+    if (!slide) {
+      throw new Error('Slide data is required')
+    }
+    
+    if (!slide.id) {
+      throw new Error('Slide ID is required')
+    }
+    
+    if (slide.slide_number === undefined || slide.slide_number === null) {
+      throw new Error('Slide number is required')
+    }
+    
+    // Create SVG content
+    console.log(`Creating SVG for slide ${slide.slide_number}...`)
     const svgContent = createSlideSVG(slide, project)
     
-    // Log SVG content for debugging (first 200 chars)
-    console.log(`Generating image for slide ${slide.slide_number}:`, svgContent.substring(0, 200) + '...')
-    
-    // Validate that we have valid content
+    // Validate SVG content
     if (!svgContent || svgContent.trim().length === 0) {
       throw new Error('Generated SVG content is empty')
     }
     
+    if (svgContent.length < 100) {
+      throw new Error('Generated SVG content is too short, likely invalid')
+    }
+    
+    console.log(`SVG validated, converting to PNG...`)
+    
+    // Convert SVG to PNG using Sharp
     const imageBuffer = await sharp(Buffer.from(svgContent))
       .png({ 
         quality: 95,
         compressionLevel: 6,
-        progressive: true
+        progressive: false // Disable progressive for better compatibility
       })
-      .ensureAlpha() // Ensure proper alpha channel handling
-      .toColorspace('srgb') // Ensure proper color space
+      .ensureAlpha()
+      .toColorspace('srgb')
       .toBuffer()
 
+    // Generate safe filename
     const projectTitle = project?.title?.replace(/[^a-zA-Z0-9]/g, '_') || 'slide'
     const fileName = `${projectTitle}_slide_${slide.slide_number.toString().padStart(2, '0')}.png`
 
-    console.log(`Successfully generated image for slide ${slide.slide_number}, size: ${imageBuffer.length} bytes`)
+    console.log(`✅ Image generated successfully for slide ${slide.slide_number}`)
+    console.log(`   File: ${fileName}`)
+    console.log(`   Size: ${imageBuffer.length} bytes`)
 
     return {
       slideId: slide.id,
       slideNumber: slide.slide_number,
-      content: slide.content,
+      content: slide.content || '',
       imageBuffer,
       fileName
     }
+    
   } catch (error) {
-    console.error(`Error generating slide image for slide ${slide.slide_number}:`, error)
-    console.error('Slide content:', slide.content)
+    console.error(`❌ Error generating image for slide ${slide.slide_number}:`, error)
+    console.error('Slide data:', {
+      id: slide?.id,
+      slide_number: slide?.slide_number,
+      content_length: slide?.content?.length || 0,
+      content_preview: slide?.content?.substring(0, 50) || 'N/A'
+    })
+    
     if (project) {
-      console.error('Project title:', project.title)
-      console.error('Template type:', project.template_type)
+      console.error('Project data:', {
+        title: project.title,
+        template_type: project.template_type
+      })
     }
-    throw new Error(`Failed to generate image for slide ${slide.slide_number}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    
+    // Create a more specific error message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to generate image for slide ${slide.slide_number}: ${errorMessage}`)
   }
 }
 
 /**
- * Generate images for all slides in a carousel
+ * Generate images for all slides in a carousel with improved error handling
  */
 export async function generateCarouselImages(
   slides: Slide[],
   project?: CarouselProject
 ): Promise<SlideImageData[]> {
+  console.log(`🎯 Generating images for ${slides.length} slides...`)
+  
+  if (!slides || slides.length === 0) {
+    throw new Error('No slides provided for image generation')
+  }
+  
+  // Validate all slides first
+  for (const slide of slides) {
+    if (!slide.id) {
+      throw new Error(`Slide missing ID: ${JSON.stringify(slide)}`)
+    }
+    if (slide.slide_number === undefined) {
+      throw new Error(`Slide missing slide_number: ${slide.id}`)
+    }
+  }
+  
   const sortedSlides = slides.sort((a, b) => a.slide_number - b.slide_number)
+  console.log(`Slides sorted, processing in order...`)
   
   try {
-    const results = await Promise.all(
-      sortedSlides.map(slide => generateSlideImage(slide, project))
-    )
+    // Generate images sequentially to avoid memory issues
+    const results: SlideImageData[] = []
+    
+    for (let i = 0; i < sortedSlides.length; i++) {
+      const slide = sortedSlides[i]
+      console.log(`Processing slide ${i + 1}/${sortedSlides.length} (slide #${slide.slide_number})`)
+      
+      try {
+        const result = await generateSlideImage(slide, project)
+        results.push(result)
+        console.log(`✅ Slide ${slide.slide_number} completed`)
+      } catch (slideError) {
+        console.error(`❌ Failed to generate slide ${slide.slide_number}:`, slideError)
+        throw new Error(`Failed to generate slide ${slide.slide_number}: ${slideError instanceof Error ? slideError.message : 'Unknown error'}`)
+      }
+    }
+    
+    console.log(`🎉 All ${results.length} images generated successfully!`)
     return results
+    
   } catch (error) {
-    console.error('Error generating carousel images:', error)
-    throw new Error('Failed to generate carousel images')
+    console.error('💥 Error generating carousel images:', error)
+    throw new Error(`Failed to generate carousel images: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 

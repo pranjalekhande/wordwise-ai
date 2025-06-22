@@ -22,7 +22,7 @@ export interface InstagramShareOptions {
 
 export interface ShareResult {
   success: boolean
-  shareMethod: 'web' | 'mobile-app' | 'fallback'
+  shareMethod: 'web' | 'mobile-app' | 'fallback' | 'native'
   shareUrl?: string
   error?: string
   captionCopied?: boolean
@@ -149,13 +149,30 @@ export async function shareCarouselToInstagram(
     const slides = slideImages.map(img => ({ content: img.content }))
     const fullCaption = createInstagramCaption(project, slides, options)
     
+    // ALWAYS copy caption to clipboard first (before opening Instagram)
+    console.log('📋 Copying caption to clipboard...')
+    const copySuccess = await copyTextToClipboard(fullCaption)
+    console.log(`📋 Caption copy result: ${copySuccess ? 'Success' : 'Failed'}`)
+    
     if (mobile) {
-      // Try Instagram app deep link
-      const instagramUrl = 'instagram://camera'
-      window.location.href = instagramUrl
+      // Mobile: Copy first, then open Instagram app
+      console.log('📱 Mobile device detected - opening Instagram app...')
       
+      const instagramUrl = 'instagram://camera'
+      
+      // Try to open Instagram app
+      try {
+        window.location.href = instagramUrl
+        console.log('📱 Instagram app opened via deep link')
+      } catch (error) {
+        console.warn('📱 Instagram app deep link failed, trying web fallback')
+        window.open('https://www.instagram.com/', '_blank')
+      }
+      
+      // Fallback to web if app doesn't open
       setTimeout(() => {
         if (document.hasFocus()) {
+          console.log('📱 App didn\'t open, opening Instagram web as fallback')
           window.open('https://www.instagram.com/', '_blank')
         }
       }, 1500)
@@ -163,11 +180,12 @@ export async function shareCarouselToInstagram(
       return {
         success: true,
         shareMethod: 'mobile-app',
-        shareUrl: instagramUrl
+        shareUrl: instagramUrl,
+        captionCopied: copySuccess
       }
     } else {
       // Desktop: Copy caption and open Instagram web
-      const copySuccess = await copyTextToClipboard(fullCaption)
+      console.log('💻 Desktop device detected - opening Instagram web...')
       
       const shareUrl = 'https://www.instagram.com/'
       window.open(shareUrl, '_blank')
@@ -180,6 +198,7 @@ export async function shareCarouselToInstagram(
       }
     }
   } catch (error) {
+    console.error('❌ Instagram sharing failed:', error)
     return {
       success: false,
       shareMethod: 'fallback',

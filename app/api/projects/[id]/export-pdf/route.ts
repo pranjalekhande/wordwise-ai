@@ -55,18 +55,21 @@ export async function POST(
     if (textOnly) {
       const pdfResult = await generateTextOnlyPDF(slides, project as CarouselProject)
       
-      if (!pdfResult.success) {
+      if (!pdfResult.success || !pdfResult.buffer) {
         return NextResponse.json(
-          { success: false, error: pdfResult.error },
+          { success: false, error: pdfResult.error || 'Failed to generate text-only PDF buffer' },
           { status: 500 }
         )
       }
 
-      return NextResponse.json({
-        success: true,
-        fileName: pdfResult.fileName,
-        type: 'text-only',
-        slidesCount: slides.length
+      // Return the PDF file as a download
+      return new NextResponse(pdfResult.buffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${pdfResult.fileName}"`,
+          'Content-Length': pdfResult.buffer.length.toString(),
+        },
       })
     }
 
@@ -89,24 +92,40 @@ export async function POST(
           console.warn('Image generation failed, creating text-only PDF')
           const pdfResult = await generateTextOnlyPDF(slides, project as CarouselProject)
           
-          return NextResponse.json({
-            success: true,
-            fileName: pdfResult.fileName,
-            type: 'text-only-fallback',
-            warning: 'Images could not be generated',
-            slidesCount: slides.length
+          if (!pdfResult.success || !pdfResult.buffer) {
+            return NextResponse.json(
+              { success: false, error: pdfResult.error || 'Failed to generate fallback PDF' },
+              { status: 500 }
+            )
+          }
+
+          return new NextResponse(pdfResult.buffer, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="${pdfResult.fileName}"`,
+              'Content-Length': pdfResult.buffer.length.toString(),
+            },
           })
         }
       } catch (imageError) {
         console.warn('Image generation error, falling back to text-only:', imageError)
         const pdfResult = await generateTextOnlyPDF(slides, project as CarouselProject)
         
-        return NextResponse.json({
-          success: true,
-          fileName: pdfResult.fileName,
-          type: 'text-only-fallback',
-          warning: 'Images could not be generated due to error',
-          slidesCount: slides.length
+        if (!pdfResult.success || !pdfResult.buffer) {
+          return NextResponse.json(
+            { success: false, error: pdfResult.error || 'Failed to generate fallback PDF' },
+            { status: 500 }
+          )
+        }
+
+        return new NextResponse(pdfResult.buffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${pdfResult.fileName}"`,
+            'Content-Length': pdfResult.buffer.length.toString(),
+          },
         })
       }
     } else {
@@ -123,19 +142,21 @@ export async function POST(
     // Generate PDF with images
     const pdfResult = await generateCarouselPDF(slideImages, project as CarouselProject)
     
-    if (!pdfResult.success) {
+    if (!pdfResult.success || !pdfResult.buffer) {
       return NextResponse.json(
-        { success: false, error: pdfResult.error },
+        { success: false, error: pdfResult.error || 'Failed to generate PDF buffer' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({
-      success: true,
-      fileName: pdfResult.fileName,
-      type: includeImages ? 'with-images' : 'text-only',
-      slidesCount: slides.length,
-      imagesGenerated: slideImages.filter(img => img.imageUrl).length
+    // Return the PDF file as a download
+    return new NextResponse(pdfResult.buffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${pdfResult.fileName}"`,
+        'Content-Length': pdfResult.buffer.length.toString(),
+      },
     })
 
   } catch (error) {
