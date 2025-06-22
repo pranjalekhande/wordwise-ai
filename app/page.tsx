@@ -28,10 +28,12 @@ export default function Dashboard() {
         const data = await response.json()
         setStats(data)
       } else {
-        console.error("Failed to fetch user stats")
+        // Silently handle stats loading failure - user will see default values
+        setStats({ writingScore: 0 })
       }
     } catch (error) {
-      console.error("Error fetching user stats:", error)
+      // Silently handle network errors - user will see default values
+      setStats({ writingScore: 0 })
     } finally {
       setIsLoading(false)
     }

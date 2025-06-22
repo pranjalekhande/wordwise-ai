@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Sparkles, TrendingUp, Users, Lightbulb } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { recommendTemplateType } from "@/lib/template-optimizer"
@@ -55,77 +54,41 @@ export function SmartTemplateSelector({
     }
   }
 
-  const getTemplateDescription = (template: string) => {
-    switch (template) {
-      case 'NEWS': return 'Breaking news, announcements, updates'
-      case 'PRODUCT': return 'Product launches, features, marketing'
-      case 'STORY': return 'Personal stories, case studies, journeys'
-      default: return 'General content structure'
-    }
-  }
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'bg-green-100 text-green-700 border-green-200'
-    if (confidence >= 0.6) return 'bg-yellow-100 text-yellow-700 border-yellow-200'
-    return 'bg-blue-100 text-blue-700 border-blue-200'
-  }
-
-  const getConfidenceLabel = (confidence: number) => {
-    if (confidence >= 0.8) return 'High Confidence'
-    if (confidence >= 0.6) return 'Medium Confidence'
-    return 'Suggestion'
-  }
-
   const TemplateIcon = getTemplateIcon(recommendation.recommended)
 
   return (
-    <div className={className}>
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-sm text-blue-800">
-            <Lightbulb className="h-4 w-4" />
-            Smart Template Recommendation
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TemplateIcon className="h-5 w-5 text-blue-600" />
-              <div>
-                <span className="font-medium text-blue-900">{recommendation.recommended} Template</span>
-                <p className="text-xs text-blue-700">{getTemplateDescription(recommendation.recommended)}</p>
-              </div>
-            </div>
-            <Badge className={`text-xs ${getConfidenceColor(recommendation.confidence)}`}>
-              {getConfidenceLabel(recommendation.confidence)}
-            </Badge>
-          </div>
-
-          <div className="text-xs text-blue-700 bg-white/50 rounded p-2">
-            <span className="font-medium">Why this template?</span>
-            <br />
-            {recommendation.reasoning}
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => onTemplateChange(recommendation.recommended)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-            >
-              Switch to {recommendation.recommended}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setRecommendation(null)}
-              className="text-blue-600 border-blue-300"
-            >
-              Keep {currentTemplate}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <div className={`p-3 bg-blue-50 border border-blue-200 rounded-lg ${className}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <TemplateIcon className="h-4 w-4 text-blue-600" />
+          <span className="text-sm font-medium text-blue-900">
+            Recommended: {recommendation.recommended}
+          </span>
+        </div>
+        {recommendation.confidence >= 0.8 && (
+          <Badge variant="secondary" className="text-xs">
+            High confidence
+          </Badge>
+        )}
+      </div>
+      
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          onClick={() => onTemplateChange(recommendation.recommended)}
+          className="bg-blue-600 hover:bg-blue-700 text-xs"
+        >
+          Switch to {recommendation.recommended}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setRecommendation(null)}
+          className="text-blue-600 border-blue-300 text-xs"
+        >
+          Keep {currentTemplate}
+        </Button>
+      </div>
     </div>
   )
 } 

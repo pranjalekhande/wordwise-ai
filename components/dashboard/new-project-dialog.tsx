@@ -64,14 +64,14 @@ export function NewProjectDialog({
   const [sourceText, setSourceText] = useState(preFilledSourceText || "")
   const [templateType, setTemplateType] = useState<string>(preFilledTemplateType || "STORY")
   const [slideCount, setSlideCount] = useState<number>(preFilledSlideCount || 5)
-  const [templateId, setTemplateId] = useState<string>("")
+
   const [documentId, setDocumentId] = useState<string>(preFilledDocumentId || "")
   const [targetAudience, setTargetAudience] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStage, setLoadingStage] = useState<string>("")
   const [documents, setDocuments] = useState<Document[]>([])
   const [selectedDocumentContent, setSelectedDocumentContent] = useState<string>("")
-  const { templates, addProject } = useAppStore()
+  const { addProject } = useAppStore()
   const router = useRouter()
 
   // Template type options
@@ -160,7 +160,7 @@ export function NewProjectDialog({
     setSourceText(preFilledSourceText || "")
     setTemplateType(preFilledTemplateType || "STORY")
     setSlideCount(preFilledSlideCount || 5)
-    setTemplateId("")
+
     setDocumentId(preFilledDocumentId || "")
     setTargetAudience("")
     setSelectedDocumentContent("")
@@ -179,8 +179,7 @@ export function NewProjectDialog({
     setLoadingStage("Creating carousel...")
 
     try {
-      // Process template and document IDs properly
-      const processedTemplateId = templateId && templateId !== "none" ? templateId : null
+      // Process document ID properly
       const processedDocumentId = documentId && documentId !== "none" ? documentId : null
 
       // Show AI generation stage if source text is provided
@@ -199,7 +198,7 @@ export function NewProjectDialog({
           source_text: getCombinedSourceText(),
           template_type: templateType,
           slide_count: slideCount,
-          template_id: processedTemplateId,
+
           document_id: processedDocumentId,
           target_audience: targetAudience.trim() || null,
         }),
@@ -240,65 +239,35 @@ export function NewProjectDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New InstaCarousel</DialogTitle>
-            <DialogDescription>
-              Create a new Instagram carousel from your content. Select a document, add text, or combine both. Choose a template type and let AI generate your slides.
-            </DialogDescription>
+            <DialogTitle>Create InstaCarousel</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">InstaCarousel Title</Label>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter carousel title..."
+                placeholder="Enter title..."
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="source-text">
-                Source Text 
-                {selectedDocumentContent && (
-                  <span className="ml-2 text-sm text-green-600">
-                    + Document Content ({selectedDocumentContent.length} chars)
-                  </span>
-                )}
-                <span className="ml-2 text-sm text-muted-foreground">
-                  ({combinedTextLength}/{selectedDocumentContent ? "Combined" : "50 min"})
-                </span>
-              </Label>
+              <Label htmlFor="source-text">Content</Label>
               <Textarea
                 id="source-text"
                 value={sourceText}
                 onChange={(e) => setSourceText(e.target.value)}
-                placeholder={
-                  selectedDocumentContent
-                    ? "Add additional context or instructions (optional)..."
-                    : "Paste your content here (minimum 50 characters)..."
-                }
+                placeholder="Paste your content here (min 50 characters)..."
                 className="h-32 resize-none"
               />
-              {selectedDocumentContent && sourceText && (
-                <div className="text-sm p-2 bg-blue-50 border border-blue-200 rounded">
-                  <p className="text-blue-800 font-medium">✓ Test Condition: Document + Additional Text</p>
-                  <p className="text-blue-600 text-xs">
-                    Will combine document content ({selectedDocumentContent.length} chars) with your additional text ({sourceText.length} chars)
-                  </p>
-                </div>
-              )}
               {!isTextValid && combinedTextLength > 0 && (
                 <p className="text-sm text-red-500">
-                  Need {50 - combinedTextLength} more characters (minimum 50 required)
-                </p>
-              )}
-              {selectedDocumentContent && !sourceText && (
-                <p className="text-sm text-green-600">
-                  Using document content only ({selectedDocumentContent.length} characters)
+                  Need {50 - combinedTextLength} more characters
                 </p>
               )}
             </div>
@@ -308,34 +277,29 @@ export function NewProjectDialog({
               content={getCombinedSourceText()}
               currentTemplate={templateType as "NEWS" | "STORY" | "PRODUCT"}
               onTemplateChange={(template) => setTemplateType(template)}
-              className="mb-2"
             />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="template-type">Template Type</Label>
+                <Label htmlFor="template-type">Type</Label>
                 <Select value={templateType} onValueChange={setTemplateType}>
                   <SelectTrigger className="h-10">
                     <SelectValue>
-                      {templateTypes.find(t => t.value === templateType)?.label || "Select template"}
+                      {templateTypes.find(t => t.value === templateType)?.label || "Select type"}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="w-[280px]">
+                  <SelectContent>
                     {templateTypes.map((template) => (
-                      <SelectItem key={template.value} value={template.value} className="py-3">
-                        <div className="flex flex-col gap-1 w-full">
-                          <span className="font-medium text-sm">{template.label}</span>
-                          <span className="text-xs text-muted-foreground leading-tight break-words">{template.description}</span>
-                        </div>
+                      <SelectItem key={template.value} value={template.value}>
+                        {template.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Choose content structure</p>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="slide-count">Number of Slides</Label>
+                <Label htmlFor="slide-count">Slides</Label>
                 <Input
                   id="slide-count"
                   type="number"
@@ -345,32 +309,31 @@ export function NewProjectDialog({
                   onChange={(e) => setSlideCount(Number(e.target.value))}
                   className="w-full h-10"
                 />
-                <p className="text-xs text-muted-foreground">Recommended: 5-7 slides</p>
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of your carousel..."
+                placeholder="Brief description..."
                 className="h-20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="document">Source Document (Optional)</Label>
+              <Label htmlFor="document">Source Document</Label>
               <Select value={documentId} onValueChange={handleDocumentChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a document" />
+                  <SelectValue placeholder="Select document" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No document</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {documents.map((document) => (
                     <SelectItem key={document.id} value={document.id}>
-                      {document.title} ({document.word_count} words)
+                      {document.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -378,29 +341,12 @@ export function NewProjectDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="template">Brand Voice Template (Optional)</Label>
-              <Select value={templateId} onValueChange={setTemplateId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No template</SelectItem>
-                  {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="audience">Target Audience (Optional)</Label>
+              <Label htmlFor="audience">Target Audience</Label>
               <Input
                 id="audience"
                 value={targetAudience}
                 onChange={(e) => setTargetAudience(e.target.value)}
-                placeholder="e.g., Small business owners, Content creators..."
+                placeholder="e.g., Content creators..."
               />
             </div>
           </div>
