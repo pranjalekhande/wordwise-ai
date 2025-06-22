@@ -13,10 +13,11 @@ interface LayoutWrapperProps {
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname()
   
-  // Check if we're on authentication pages
+  // Check if we're on authentication pages only
   const isAuthPage = pathname?.startsWith('/sign-in') || pathname?.startsWith('/sign-up')
   
   // If it's an auth page, just render children without AuthGuard or sidebar
+  // All other pages (including home) will have the sidebar for authenticated users
   if (isAuthPage) {
     return <>{children}</>
   }

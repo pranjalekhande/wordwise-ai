@@ -373,7 +373,7 @@ export function ProjectList() {
         )}
       </div>
 
-      {/* Document to Carousel Dialog */}
+     
       {selectedDocument && (
         <NewProjectDialog 
           isOpen={carouselDialogOpen}

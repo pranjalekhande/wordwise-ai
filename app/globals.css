@@ -10,6 +10,11 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Compact mode adjustments */
+  .compact-mode {
+    --spacing-scale: 0.75;
+  }
 }
 
 @layer base {
@@ -47,6 +52,7 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --base-font-size: 16px;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -82,13 +88,94 @@ body {
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Small font size */
+  .font-size-small {
+    --base-font-size: 14px;
+  }
+  
+  .font-size-small body {
+    font-size: 14px;
+  }
+  
+  .font-size-small .text-sm {
+    font-size: 12px;
+  }
+  
+  .font-size-small .text-base {
+    font-size: 14px;
+  }
+  
+  .font-size-small .text-lg {
+    font-size: 16px;
+  }
+  
+  .font-size-small .text-xl {
+    font-size: 18px;
+  }
+  
+  .font-size-small .text-2xl {
+    font-size: 20px;
+  }
+  
+  .font-size-small .text-3xl {
+    font-size: 24px;
+  }
+  
+  /* Medium font size (default) */
+  .font-size-medium {
+    --base-font-size: 16px;
+  }
+  
+  /* Large font size */
+  .font-size-large {
+    --base-font-size: 18px;
+  }
+  
+  .font-size-large body {
+    font-size: 18px;
+  }
+  
+  .font-size-large .text-sm {
+    font-size: 16px;
+  }
+  
+  .font-size-large .text-base {
+    font-size: 18px;
+  }
+  
+  .font-size-large .text-lg {
+    font-size: 20px;
+  }
+  
+  .font-size-large .text-xl {
+    font-size: 22px;
+  }
+  
+  .font-size-large .text-2xl {
+    font-size: 26px;
+  }
+  
+  .font-size-large .text-3xl {
+    font-size: 30px;
+  }
+  
+  /* Apply font size scaling to common elements */
+  .font-size-small p,
+  .font-size-small span,
+  .font-size-small div {
+    font-size: inherit;
+  }
+  
+  .font-size-large p,
+  .font-size-large span,
+  .font-size-large div {
+    font-size: inherit;
   }
 }

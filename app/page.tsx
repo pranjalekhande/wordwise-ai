@@ -1,23 +1,32 @@
 "use client"
 
+import { useUser } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
 import { ProjectList } from "@/components/dashboard/project-list"
+import { NewProjectDialog } from "@/components/dashboard/new-project-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Plus, TrendingUp, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { LandingPage } from "@/components/landing/landing-page"
 
 interface UserStats {
   writingScore: number
 }
 
-export default function Dashboard() {
+export default function HomePage() {
+  const { isSignedIn, isLoaded } = useUser()
   const router = useRouter()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false)
 
   useEffect(() => {
-    fetchUserStats()
-  }, [])
+    if (isSignedIn) {
+      fetchUserStats()
+    } else {
+      setIsLoading(false)
+    }
+  }, [isSignedIn])
 
   const fetchUserStats = async () => {
     try {
@@ -26,10 +35,12 @@ export default function Dashboard() {
         const data = await response.json()
         setStats(data)
       } else {
-        console.error("Failed to fetch user stats")
+        // Silently handle stats loading failure - user will see default values
+        setStats({ writingScore: 0 })
       }
     } catch (error) {
-      console.error("Error fetching user stats:", error)
+      // Silently handle network errors - user will see default values
+      setStats({ writingScore: 0 })
     } finally {
       setIsLoading(false)
     }
@@ -40,11 +51,27 @@ export default function Dashboard() {
   }
 
   const handleNewProject = () => {
-    // Scroll to the top where the New InstaCarousel button is located
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    // The user can click the New InstaCarousel button in the header
+    setIsNewProjectDialogOpen(true)
   }
 
+  // Show loading state while authentication is being checked
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Show landing page for unauthenticated users
+  if (!isSignedIn) {
+    return <LandingPage />
+  }
+
+  // Show dashboard for authenticated users
   return (
     <div className="container mx-auto p-6 space-y-8">
       {/* Quick Actions */}
@@ -97,6 +124,12 @@ export default function Dashboard() {
       </div>
 
       <ProjectList />
+      
+      {/* New Project Dialog */}
+      <NewProjectDialog 
+        isOpen={isNewProjectDialogOpen}
+        onOpenChange={setIsNewProjectDialogOpen}
+      />
     </div>
   )
 }

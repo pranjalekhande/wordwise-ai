@@ -7,6 +7,18 @@ export async function GET() {
     const userId = await requireAuth()
     const supabase = createServerSupabaseClient()
 
+    // Get projects count (carousels created)
+    const { count: projectsCount } = await supabase
+      .from("carousel_projects")
+      .select("*", { count: 'exact', head: true })
+      .eq("user_id", userId)
+
+    // Get documents count
+    const { count: documentsCount } = await supabase
+      .from("documents")
+      .select("*", { count: 'exact', head: true })
+      .eq("user_id", userId)
+
     // Calculate writing score based on recent documents
     const { data: recentDocuments } = await supabase
       .from("documents")
@@ -23,7 +35,11 @@ export async function GET() {
       writingScore = Math.min(100, Math.round((avgWordsPerDoc / 100) * 60 + consistencyBonus))
     }
 
-    return NextResponse.json({ writingScore })
+    return NextResponse.json({ 
+      projectsCount: projectsCount || 0,
+      documentsCount: documentsCount || 0,
+      writingScore 
+    })
   } catch (error) {
     if (error instanceof Error && error.message === "Authentication required") {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 })
