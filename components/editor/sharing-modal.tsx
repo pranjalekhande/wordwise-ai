@@ -89,6 +89,7 @@ export function SharingModal({
 }: SharingModalProps) {
   // State management
   const [activeTab, setActiveTab] = useState<'instructions' | 'preview' | 'social' | 'download' | 'advanced'>('instructions')
+  const [deviceType, setDeviceType] = useState<'mobile' | 'desktop'>('mobile')
   const [shareProgress, setShareProgress] = useState<ShareProgress>({
     stage: 'idle',
     progress: 0,
@@ -488,7 +489,7 @@ export function SharingModal({
             Share "{project.title}"
           </DialogTitle>
           <DialogDescription>
-            Share your Instagram carousel or download for later use.
+            Export your Instagram carousel and get step-by-step posting guidance.
           </DialogDescription>
         </DialogHeader>
 
@@ -515,11 +516,11 @@ export function SharingModal({
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="instructions">Instructions</TabsTrigger>
+            <TabsTrigger value="instructions">How to Post</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
-            <TabsTrigger value="social">Social Media</TabsTrigger>
-            <TabsTrigger value="download">Download</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            <TabsTrigger value="social">Share</TabsTrigger>
+            <TabsTrigger value="download">Export</TabsTrigger>
+            <TabsTrigger value="advanced">Settings</TabsTrigger>
           </TabsList>
 
           {/* Instructions Tab */}
@@ -527,7 +528,7 @@ export function SharingModal({
             <div className="space-y-6">
               <div className="text-center">
                 <h3 className="text-xl font-semibold mb-2">Post Your Carousel to Instagram</h3>
-                <p className="text-muted-foreground">With these simple steps</p>
+                <p className="text-muted-foreground">Follow these steps to share your content</p>
               </div>
 
               {/* Progress Overview */}
@@ -570,169 +571,143 @@ export function SharingModal({
                 </Card>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Device Type Tabs */}
+              <Tabs value={deviceType} onValueChange={(value) => setDeviceType(value as 'mobile' | 'desktop')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="mobile" className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4" />
+                    Mobile
+                  </TabsTrigger>
+                  <TabsTrigger value="desktop" className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    Desktop
+                  </TabsTrigger>
+                </TabsList>
+
                 {/* Mobile Instructions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Smartphone className="h-5 w-5" />
-                      Mobile (Recommended)
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${
-                          postingProgress.imagesDownloaded 
-                            ? 'bg-green-100 text-green-600' 
-                            : 'bg-blue-100 text-blue-600'
-                        }`}>
-                          {postingProgress.imagesDownloaded ? <Check className="h-3 w-3" /> : '1'}
+                <TabsContent value="mobile" className="mt-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                            postingProgress.imagesDownloaded 
+                              ? 'bg-green-100 text-green-600' 
+                              : 'bg-blue-100 text-blue-600'
+                          }`}>
+                            {postingProgress.imagesDownloaded ? <Check className="h-4 w-4" /> : '1'}
+                          </div>
+                          <div>
+                            <p className="font-medium">Download Images</p>
+                            <p className="text-sm text-muted-foreground">Tap "Download Images" button below</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">Download Images</p>
-                          <p className="text-sm text-muted-foreground">Tap "Download All"</p>
+                        
+                        <div className="flex items-start gap-3">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                            postingProgress.captionCopied 
+                              ? 'bg-green-100 text-green-600' 
+                              : 'bg-blue-100 text-blue-600'
+                          }`}>
+                            {postingProgress.captionCopied ? <Check className="h-4 w-4" /> : '2'}
+                          </div>
+                          <div>
+                            <p className="font-medium">Copy Caption</p>
+                            <p className="text-sm text-muted-foreground">Tap "Copy Caption" button below</p>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${
-                          postingProgress.captionCopied 
-                            ? 'bg-green-100 text-green-600' 
-                            : 'bg-blue-100 text-blue-600'
-                        }`}>
-                          {postingProgress.captionCopied ? <Check className="h-3 w-3" /> : '2'}
-                        </div>
-                        <div>
-                          <p className="font-medium">Copy Caption</p>
-                          <p className="text-sm text-muted-foreground">Your caption is ready in your clipboard</p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">3</div>
-                        <div>
-                          <p className="font-medium">Open Instagram App</p>
-                          <p className="text-sm text-muted-foreground">Tap the "+" button → "Post"</p>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">3</div>
+                          <div>
+                            <p className="font-medium">Open Instagram App</p>
+                            <p className="text-sm text-muted-foreground">Tap the "+" button → "Post"</p>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">4</div>
-                        <div>
-                          <p className="font-medium">Select Multiple Images</p>
-                          <p className="text-sm text-muted-foreground">Select all images, arrange in order</p>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">4</div>
+                          <div>
+                            <p className="font-medium">Select Multiple Images</p>
+                            <p className="text-sm text-muted-foreground">Choose all downloaded images in order</p>
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">5</div>
-                        <div>
-                          <p className="font-medium">Add Caption & Post</p>
-                          <p className="text-sm text-muted-foreground">Paste caption (hold & paste) → Tap "Share"</p>
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-semibold">5</div>
+                          <div>
+                            <p className="font-medium">Paste Caption & Post</p>
+                            <p className="text-sm text-muted-foreground">Long press in caption box → Paste → Share</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
                 {/* Desktop Instructions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Monitor className="h-5 w-5" />
-                      Desktop
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${
-                          postingProgress.imagesDownloaded 
-                            ? 'bg-green-100 text-green-600' 
-                            : 'bg-green-100 text-green-600'
-                        }`}>
-                          {postingProgress.imagesDownloaded ? <Check className="h-3 w-3" /> : '1'}
+                <TabsContent value="desktop" className="mt-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                            postingProgress.imagesDownloaded 
+                              ? 'bg-green-100 text-green-600' 
+                              : 'bg-green-100 text-green-600'
+                          }`}>
+                            {postingProgress.imagesDownloaded ? <Check className="h-4 w-4" /> : '1'}
+                          </div>
+                          <div>
+                            <p className="font-medium">Download Images</p>
+                            <p className="text-sm text-muted-foreground">Click "Download Images" button below</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">Download Images</p>
-                          <p className="text-sm text-muted-foreground">Click "Download All"</p>
+                        
+                        <div className="flex items-start gap-3">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                            postingProgress.captionCopied 
+                              ? 'bg-green-100 text-green-600' 
+                              : 'bg-green-100 text-green-600'
+                          }`}>
+                            {postingProgress.captionCopied ? <Check className="h-4 w-4" /> : '2'}
+                          </div>
+                          <div>
+                            <p className="font-medium">Copy Caption</p>
+                            <p className="text-sm text-muted-foreground">Click "Copy Caption" button below</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">3</div>
+                          <div>
+                            <p className="font-medium">Open Instagram.com</p>
+                            <p className="text-sm text-muted-foreground">Click "+" → "Select from computer"</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">4</div>
+                          <div>
+                            <p className="font-medium">Choose Images</p>
+                            <p className="text-sm text-muted-foreground">Select all images, arrange in order → Next</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">5</div>
+                          <div>
+                            <p className="font-medium">Paste Caption & Share</p>
+                            <p className="text-sm text-muted-foreground">Paste with Ctrl+V → Click Share</p>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${
-                          postingProgress.captionCopied 
-                            ? 'bg-green-100 text-green-600' 
-                            : 'bg-green-100 text-green-600'
-                        }`}>
-                          {postingProgress.captionCopied ? <Check className="h-3 w-3" /> : '2'}
-                        </div>
-                        <div>
-                          <p className="font-medium">Copy Caption</p>
-                          <p className="text-sm text-muted-foreground">Caption is ready in your clipboard </p>
-                        </div>
-                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
 
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">3</div>
-                        <div>
-                          <p className="font-medium">Open Instagram.com</p>
-                          <p className="text-sm text-muted-foreground">Click "+" → "Select from computer"</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">4</div>
-                        <div>
-                          <p className="font-medium">Choose Images</p>
-                          <p className="text-sm text-muted-foreground">Select all images, arrange in order → "Next"</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-semibold">5</div>
-                        <div>
-                          <p className="font-medium">Paste & Share</p>
-                          <p className="text-sm text-muted-foreground">Paste caption (Ctrl+V) → Click "Share"</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Pro Tips */}
-              <Card className="bg-blue-50 border-blue-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-blue-800">
-                    <Lightbulb className="h-5 w-5" />
-                    Pro Tips
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-blue-800">
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600">•</span>
-                      <span><strong>Keep image order:</strong> Make sure to select images in sequence (1, 2, 3, 4) for best flow</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600">•</span>
-                      <span><strong>Caption is optimized:</strong> We've formatted it perfectly for Instagram - just paste and go!</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600">•</span>
-                      <span><strong>Add hashtags:</strong> Consider adding 2-3 relevant hashtags at the end</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600">•</span>
-                      <span><strong>Tag accounts:</strong> Tag relevant people/brands to increase reach</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* Quick Action Buttons */}
+              {/* Action Buttons */}
               <div className="flex justify-center">
                 <div className="flex gap-3">
                   <Button 
@@ -751,6 +726,25 @@ export function SharingModal({
                     Copy Caption
                   </Button>
                 </div>
+              </div>
+
+              {/* Pro Tips - Bottom with smaller font */}
+              <div className="pt-4 border-t">
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-blue-800 text-sm">
+                      <Lightbulb className="h-4 w-4" />
+                      Pro Tips
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-xs text-blue-700 space-y-1">
+                      <p>• Select images in sequence (1, 2, 3, 4) for best flow</p>
+                      <p>• Caption is ready to paste - no editing needed</p>
+                      <p>• Add 2-3 relevant hashtags for better reach</p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
@@ -835,7 +829,7 @@ export function SharingModal({
                 className="flex-1 sm:flex-none"
               >
                 <Instagram className="h-4 w-4 mr-2" />
-                Share to Instagram
+                Get Instructions
               </Button>
               {supportsWebShare && (
                 <Button
@@ -844,7 +838,7 @@ export function SharingModal({
                   className="flex-1 sm:flex-none"
                 >
                   <Smartphone className="h-4 w-4 mr-2" />
-                  Native Share
+                  Device Share
                 </Button>
               )}
               <Button
@@ -853,7 +847,7 @@ export function SharingModal({
                 className="flex-1 sm:flex-none"
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download All
+                Download Images
               </Button>
             </div>
           </TabsContent>
@@ -872,7 +866,7 @@ export function SharingModal({
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    {isMobile ? 'Opens Instagram app' : 'Opens Instagram web + copies caption'}
+                    Prepares caption and images for Instagram posting
                   </p>
                   <Button 
                     onClick={handleInstagramShare}
@@ -883,12 +877,12 @@ export function SharingModal({
                     {shareResults.instagram?.success ? (
                       <>
                         <Check className="h-4 w-4 mr-2" />
-                        Shared
+                        Ready to Post
                       </>
                     ) : (
                       <>
                         <Instagram className="h-4 w-4 mr-2" />
-                        Share Now
+                        Prepare for Instagram
                       </>
                     )}
                   </Button>
@@ -954,12 +948,12 @@ export function SharingModal({
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Archive className="h-5 w-5 text-green-600" />
-                    Download All Images
+                    Carousel Images
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Download all {slides.length} images as individual PNG files
+                    Download all {slides.length} carousel images ready for Instagram
                   </p>
                   <Button 
                     onClick={handleDownloadImages}
@@ -968,7 +962,7 @@ export function SharingModal({
                     size="sm"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Download ({slides.length} images)
+                    Download {slides.length} Images
                   </Button>
                 </CardContent>
               </Card>
@@ -977,12 +971,12 @@ export function SharingModal({
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <FileText className="h-5 w-5 text-blue-600" />
-                    Export as PDF
+                    PDF Export
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Create a professional PDF with all slides and images
+                    Professional PDF with carousel images and content
                   </p>
                   <Button 
                     variant="outline"
@@ -1012,14 +1006,14 @@ export function SharingModal({
           <TabsContent value="advanced" className="space-y-4">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Export Options</h3>
+                <h3 className="text-lg font-semibold mb-2">Carousel Format</h3>
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Instagram Carousel Format</CardTitle>
+                    <CardTitle className="text-base">Instagram Carousel Specifications</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-3">
-                      All images exported in Instagram's optimal carousel format
+                      Optimized format for Instagram carousel posts
                     </p>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
@@ -1028,7 +1022,7 @@ export function SharingModal({
                         <Badge variant="outline">PNG Quality</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Perfect size and quality for Instagram carousel posts
+                        Perfect dimensions and quality for Instagram
                       </p>
                     </div>
                   </CardContent>
@@ -1038,14 +1032,14 @@ export function SharingModal({
               <Separator />
 
               <div>
-                <h3 className="text-lg font-semibold mb-2">Sharing Analytics</h3>
+                <h3 className="text-lg font-semibold mb-2">Future Features</h3>
                 <Card>
                   <CardContent className="pt-6">
                     <p className="text-sm text-muted-foreground">
-                      Track sharing performance and engagement metrics.
+                      Enhanced analytics and sharing features coming soon.
                     </p>
                     <Button variant="outline" size="sm" className="mt-2" disabled>
-                      Enable Analytics (Pro Feature)
+                      Advanced Features (Coming Soon)
                     </Button>
                   </CardContent>
                 </Card>

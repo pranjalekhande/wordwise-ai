@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAppStore } from "@/lib/store"
 import { useRouter } from "next/navigation"
+import { SmartTemplateSelector } from "./smart-template-selector"
 import type { Document } from "@/lib/types"
 
 interface NewProjectDialogProps {
@@ -301,6 +302,14 @@ export function NewProjectDialog({
                 </p>
               )}
             </div>
+
+            {/* Smart Template Recommendation */}
+            <SmartTemplateSelector
+              content={getCombinedSourceText()}
+              currentTemplate={templateType as "NEWS" | "STORY" | "PRODUCT"}
+              onTemplateChange={(template) => setTemplateType(template)}
+              className="mb-2"
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
