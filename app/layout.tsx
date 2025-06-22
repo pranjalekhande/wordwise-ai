@@ -4,6 +4,8 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ClerkProvider } from "@clerk/nextjs"
 import { LayoutWrapper } from "@/components/layout/layout-wrapper"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -38,19 +40,28 @@ export default function RootLayout({
               </div>
             </div>
           </div>
+          <Toaster position="top-right" richColors />
         </body>
       </html>
     )
   }
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ClerkProvider>
-          <LayoutWrapper>
-            {children}
-          </LayoutWrapper>
-        </ClerkProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ClerkProvider>
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+          </ClerkProvider>
+          <Toaster position="top-right" richColors />
+        </ThemeProvider>
       </body>
     </html>
   )
