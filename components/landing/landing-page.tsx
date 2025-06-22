@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { useState } from "react"
+import Image from "next/image"
 
 /**
  * Landing Page Component
- * Enhanced design with navigation and warm brown tones
- * Multiple sections showcasing features and benefits
+ * Enhanced design with navigation, warm brown tones, and hero illustration
+ * Mobile-first responsive design with professional illustration
  */
 export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -86,84 +87,75 @@ export function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section - Split Layout */}
-      <section className="min-h-screen flex">
-        {/* Left Half - Main Content */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 lg:px-20 py-12 bg-white">
-          <div className="max-w-xl mx-auto lg:mx-0">
-            {/* Main Headline */}
-            <h1 className="text-4xl lg:text-6xl font-bold text-stone-900 mb-8 leading-[1.1] tracking-tight">
-              AI-powered writing assistant for creators
-            </h1>
+      {/* Hero Section - Mobile-First Responsive Design */}
+      <section className="py-12 lg:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             
-            {/* Description */}
-            <p className="text-xl lg:text-2xl text-stone-600 mb-10 leading-relaxed font-light">
-              Transform your documents into polished content. From grammar checking to Instagram carousels — all powered by intelligent AI.
-            </p>
+            {/* Content - Left Side */}
+            <div className="text-center lg:text-left order-2 lg:order-1">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-stone-900 mb-6 lg:mb-8 leading-[1.1] tracking-tight">
+                AI-powered writing assistant for creators
+              </h1>
+              
+              <p className="text-lg md:text-xl lg:text-2xl text-stone-600 mb-8 lg:mb-10 leading-relaxed font-light max-w-2xl mx-auto lg:mx-0">
+                Transform your documents into polished content. From grammar checking to Instagram carousels — all powered by intelligent AI.
+              </p>
 
-            {/* Key Benefits */}
-            <div className="space-y-4 mb-10">
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-amber-600 rounded-full flex-shrink-0"></div>
-                <span className="text-stone-700 text-lg">Real-time grammar & style suggestions</span>
+              {/* Key Benefits */}
+              <div className="space-y-3 lg:space-y-4 mb-8 lg:mb-10 max-w-lg mx-auto lg:mx-0">
+                <div className="flex items-center space-x-4 justify-center lg:justify-start">
+                  <div className="w-2 h-2 bg-amber-600 rounded-full flex-shrink-0"></div>
+                  <span className="text-stone-700 text-base lg:text-lg">Real-time grammar & style suggestions</span>
+                </div>
+                <div className="flex items-center space-x-4 justify-center lg:justify-start">
+                  <div className="w-2 h-2 bg-amber-600 rounded-full flex-shrink-0"></div>
+                  <span className="text-stone-700 text-base lg:text-lg">Convert documents to social content</span>
+                </div>
+                <div className="flex items-center space-x-4 justify-center lg:justify-start">
+                  <div className="w-2 h-2 bg-amber-600 rounded-full flex-shrink-0"></div>
+                  <span className="text-stone-700 text-base lg:text-lg">Smart template recommendations</span>
+                </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-amber-600 rounded-full flex-shrink-0"></div>
-                <span className="text-stone-700 text-lg">Convert documents to social content</span>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-center lg:justify-start">
+                <Link href="/sign-up">
+                  <Button size="lg" className="bg-amber-900 hover:bg-amber-800 text-white px-8 py-4 text-lg font-medium w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-200">
+                    Start writing for free
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link href="/sign-in">
+                  <Button variant="outline" size="lg" className="border-stone-300 text-stone-700 hover:bg-stone-50 px-8 py-4 text-lg font-medium w-full sm:w-auto">
+                    Sign in
+                  </Button>
+                </Link>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-amber-600 rounded-full flex-shrink-0"></div>
-                <span className="text-stone-700 text-lg">Smart template recommendations</span>
-              </div>
-            </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Link href="/sign-up">
-                <Button size="lg" className="bg-amber-900 hover:bg-amber-800 text-white px-8 py-4 text-lg font-medium w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-200">
-                  Start writing for free
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/sign-in">
-                <Button variant="outline" size="lg" className="border-stone-300 text-stone-700 hover:bg-stone-50 px-8 py-4 text-lg font-medium w-full sm:w-auto">
-                  Sign in
-                </Button>
-              </Link>
-            </div>
-
-            {/* Trust indicators */}
-            <p className="text-stone-500 font-medium">
-              Free to start • No credit card required • 5 documents included
-            </p>
-          </div>
-        </div>
-
-        {/* Right Half - Feature Preview (Hidden on mobile) */}
-        <div className="hidden lg:flex w-1/2 flex-col">
-          {/* Right Top Quarter */}
-          <div className="h-1/2 bg-amber-50 flex items-center justify-center p-12 border-l border-stone-200">
-            <div className="text-center max-w-sm">
-              <FileText className="h-16 w-16 text-amber-700 mx-auto mb-6" />
-              <h3 className="text-2xl font-semibold text-stone-900 mb-4 leading-tight">
-                Smart Document Editor
-              </h3>
-              <p className="text-stone-600 text-lg leading-relaxed">
-                Write with AI assistance, grammar checking, and style suggestions
+              {/* Trust indicators */}
+              <p className="text-stone-500 font-medium text-center lg:text-left">
+                Free to start • No credit card required • 5 documents included
               </p>
             </div>
-          </div>
 
-          {/* Right Bottom Quarter */}
-          <div className="h-1/2 bg-stone-100 flex items-center justify-center p-12 border-l border-t border-stone-200">
-            <div className="text-center max-w-sm">
-              <Instagram className="h-16 w-16 text-amber-700 mx-auto mb-6" />
-              <h3 className="text-2xl font-semibold text-stone-900 mb-4 leading-tight">
-                Content Creation
-              </h3>
-              <p className="text-stone-600 text-lg leading-relaxed">
-                Transform your writing into engaging Instagram carousels instantly
-              </p>
+            {/* Illustration - Right Side */}
+            <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
+              <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl">
+                <Image
+                  src="/hero-illustration.svg"
+                  alt="AI-powered writing assistant for creators - Person with laptop creating content"
+                  width={600}
+                  height={400}
+                  priority
+                  className="w-full h-auto drop-shadow-2xl"
+                />
+                
+                {/* Decorative floating elements for larger screens */}
+                <div className="hidden lg:block absolute -top-4 -right-4 w-3 h-3 bg-amber-400 rounded-full animate-pulse"></div>
+                <div className="hidden lg:block absolute -bottom-6 -left-6 w-2 h-2 bg-amber-600 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+                <div className="hidden lg:block absolute top-1/3 -left-8 w-4 h-4 bg-amber-500 rounded-full opacity-60 animate-pulse" style={{animationDelay: '2s'}}></div>
+              </div>
             </div>
           </div>
         </div>
