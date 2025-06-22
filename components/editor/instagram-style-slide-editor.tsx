@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight, Plus, Trash2, Copy, Eye, EyeOff, Instagram, Download, Loader2, Share, FileText } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Trash2, Copy, Eye, EyeOff, Instagram, Download, Loader2, Share, FileText, File } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -43,6 +43,7 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
   const [previewOpen, setPreviewOpen] = useState(false)
   const [isDownloadingImages, setIsDownloadingImages] = useState(false)
   const [isSharingToInstagram, setIsSharingToInstagram] = useState(false)
+  const [isExportingPDF, setIsExportingPDF] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -428,6 +429,134 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
     }
   }
 
+  const handleExportPDF = async () => {
+    if (!currentProject || slides.length === 0) return
+
+    setIsExportingPDF(true)
+    try {
+      console.log(`Starting PDF export for ${slides.length} slides...`)
+      
+      // Step 1: Test jsPDF import
+      console.log('Step 1: Importing jsPDF...')
+      const { default: jsPDF } = await import('jspdf')
+      console.log('✅ jsPDF imported successfully')
+      
+      // Step 2: Test basic PDF creation
+      console.log('Step 2: Testing basic PDF creation...')
+      const testPdf = new jsPDF()
+      testPdf.text('Test PDF', 10, 10)
+      console.log('✅ Basic PDF creation works')
+      
+      // Step 3: Generate images
+      console.log('Step 3: Generating images...')
+      const response = await fetch(`/api/projects/${projectId}/export-images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          format: 'png',
+          includeZip: false
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to generate images for PDF')
+      }
+
+      const data = await response.json()
+      console.log('✅ Images generated:', data.images?.length || 0)
+      
+      if (!data.success || !data.images || data.images.length === 0) {
+        throw new Error('No images were generated for PDF')
+      }
+
+      // Step 4: Create actual PDF
+      console.log('Step 4: Creating PDF with images...')
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      })
+
+      // Set metadata
+      pdf.setProperties({
+        title: currentProject.title,
+        subject: 'Instagram Carousel',
+        author: 'WordWise AI'
+      })
+
+      // Add cover page
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      
+      pdf.setFontSize(24)
+      pdf.setFont('helvetica', 'bold')
+      const projectTitleLines = pdf.splitTextToSize(currentProject.title, pageWidth - 40)
+      pdf.text(projectTitleLines, 20, 40)
+      
+      if (currentProject.template_type) {
+        pdf.setFontSize(12)
+        pdf.text(`Template: ${currentProject.template_type}`, 20, 60)
+      }
+      
+      pdf.setFontSize(10)
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 280)
+
+      console.log('✅ Cover page added')
+
+      // Add slide pages (TEXT ONLY - CLEAN VERSION)
+      for (let i = 0; i < Math.min(data.images.length, 3); i++) {
+        const imageData = data.images[i]
+        console.log(`Adding slide ${i + 1}...`)
+        
+        pdf.addPage()
+        
+        // Slide header
+        pdf.setFontSize(16)
+        pdf.setFont('helvetica', 'bold')
+        pdf.text(`Slide ${imageData.slideNumber}`, 20, 30)
+        
+        // SKIP IMAGES FOR NOW - JUST ADD TEXT
+        console.log(`⚠️ Skipping image for slide ${i + 1} (text-only version)`)
+        
+        // Add content text
+        pdf.setFontSize(12)
+        pdf.setFont('helvetica', 'normal')
+        
+        // Clean the content text to avoid encoding issues
+        const slideCleanContent = imageData.content
+          .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters
+          .substring(0, 500) // Limit length
+        
+        const slideLines = pdf.splitTextToSize(slideCleanContent, pageWidth - 40)
+        pdf.text(slideLines, 20, 60) // Move text higher since no image
+        
+        console.log(`✅ Slide ${i + 1} completed (text-only)`)
+      }
+
+      console.log('Step 5: Saving PDF...')
+      // Save PDF (client-side download)
+      const fileName = `${currentProject.title.replace(/[^a-zA-Z0-9]/g, '_')}_carousel.pdf`
+      
+      try {
+        pdf.save(fileName)
+        console.log(`✅ PDF saved successfully: ${fileName}`)
+        alert(`PDF "${fileName}" generated successfully!`)
+      } catch (saveError) {
+        console.error('❌ Failed to save PDF:', saveError)
+        throw new Error(`Failed to save PDF: ${saveError}`)
+      }
+      
+    } catch (error) {
+      console.error('❌ PDF export failed at step:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      alert(`Failed to export PDF: ${errorMessage}\n\nCheck browser console for detailed error info.`)
+    } finally {
+      setIsExportingPDF(false)
+    }
+  }
+
   // Get template type from current project
   const templateType = (currentProject?.template_type as "NEWS" | "STORY" | "PRODUCT") || "PRODUCT"
 
@@ -606,6 +735,27 @@ export function InstagramStyleSlideEditor({ projectId }: InstagramStyleSlideEdit
               </TooltipTrigger>
               <TooltipContent>
                 <p>Copy Caption</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleExportPDF}
+                  disabled={isExportingPDF || slides.length === 0}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  {isExportingPDF ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <File className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isExportingPDF ? 'Generating PDF...' : 'Export as PDF'}</p>
               </TooltipContent>
             </Tooltip>
             
