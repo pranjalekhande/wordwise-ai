@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAppStore } from "@/lib/store"
 import { useRouter } from "next/navigation"
+import { SmartTemplateSelector } from "./smart-template-selector"
 import type { Document } from "@/lib/types"
 
 interface NewProjectDialogProps {
@@ -63,13 +64,14 @@ export function NewProjectDialog({
   const [sourceText, setSourceText] = useState(preFilledSourceText || "")
   const [templateType, setTemplateType] = useState<string>(preFilledTemplateType || "STORY")
   const [slideCount, setSlideCount] = useState<number>(preFilledSlideCount || 5)
-  const [templateId, setTemplateId] = useState<string>("")
+
   const [documentId, setDocumentId] = useState<string>(preFilledDocumentId || "")
   const [targetAudience, setTargetAudience] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [loadingStage, setLoadingStage] = useState<string>("")
   const [documents, setDocuments] = useState<Document[]>([])
-  const { templates, addProject } = useAppStore()
+  const [selectedDocumentContent, setSelectedDocumentContent] = useState<string>("")
+  const { addProject } = useAppStore()
   const router = useRouter()
 
   // Template type options
@@ -91,9 +93,53 @@ export function NewProjectDialog({
       const documentExists = documents.some(doc => doc.id === preFilledDocumentId)
       if (documentExists) {
         setDocumentId(preFilledDocumentId)
+        fetchDocumentContent(preFilledDocumentId)
       }
     }
   }, [preFilledDocumentId, documents])
+
+  // Handle document selection change
+  const handleDocumentChange = async (value: string) => {
+    setDocumentId(value)
+    if (value && value !== "none") {
+      await fetchDocumentContent(value)
+    } else {
+      setSelectedDocumentContent("")
+    }
+  }
+
+  const fetchDocumentContent = async (docId: string) => {
+    try {
+      const response = await fetch(`/api/documents/${docId}`)
+      if (response.ok) {
+        const { document } = await response.json()
+        setSelectedDocumentContent(document.content || "")
+      }
+    } catch (error) {
+      console.error("Error fetching document content:", error)
+      setSelectedDocumentContent("")
+    }
+  }
+
+  // Calculate combined source text
+  const getCombinedSourceText = () => {
+    const hasDocument = selectedDocumentContent.trim().length > 0
+    const hasTextInput = sourceText.trim().length > 0
+    
+    if (hasDocument && hasTextInput) {
+      // Test condition: Both document and text input provided
+      return `${selectedDocumentContent.trim()}\n\n---\n\nAdditional Context:\n${sourceText.trim()}`
+    } else if (hasDocument) {
+      return selectedDocumentContent.trim()
+    } else if (hasTextInput) {
+      return sourceText.trim()
+    }
+    return ""
+  }
+
+  // Get combined text length for validation
+  const combinedTextLength = getCombinedSourceText().length
+  const isTextValid = combinedTextLength >= 50
 
   const fetchDocuments = async () => {
     try {
@@ -114,9 +160,10 @@ export function NewProjectDialog({
     setSourceText(preFilledSourceText || "")
     setTemplateType(preFilledTemplateType || "STORY")
     setSlideCount(preFilledSlideCount || 5)
-    setTemplateId("")
+
     setDocumentId(preFilledDocumentId || "")
     setTargetAudience("")
+    setSelectedDocumentContent("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -132,8 +179,7 @@ export function NewProjectDialog({
     setLoadingStage("Creating carousel...")
 
     try {
-      // Process template and document IDs properly
-      const processedTemplateId = templateId && templateId !== "none" ? templateId : null
+      // Process document ID properly
       const processedDocumentId = documentId && documentId !== "none" ? documentId : null
 
       // Show AI generation stage if source text is provided
@@ -149,10 +195,10 @@ export function NewProjectDialog({
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
-          source_text: sourceText.trim(),
+          source_text: getCombinedSourceText(),
           template_type: templateType,
           slide_count: slideCount,
-          template_id: processedTemplateId,
+
           document_id: processedDocumentId,
           target_audience: targetAudience.trim() || null,
         }),
@@ -193,71 +239,67 @@ export function NewProjectDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New InstaCarousel</DialogTitle>
-            <DialogDescription>
-              Create a new Instagram carousel from your content. Paste your text, choose a template type, and let AI generate your slides.
-            </DialogDescription>
+            <DialogTitle>Create InstaCarousel</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">InstaCarousel Title</Label>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter carousel title..."
+                placeholder="Enter title..."
                 required
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="source-text">
-                Source Text <span className="text-red-500">*</span>
-                <span className="ml-2 text-sm text-muted-foreground">({sourceText.length}/50 min)</span>
-              </Label>
+              <Label htmlFor="source-text">Content</Label>
               <Textarea
                 id="source-text"
                 value={sourceText}
                 onChange={(e) => setSourceText(e.target.value)}
-                placeholder="Paste your content here (minimum 50 characters)..."
+                placeholder="Paste your content here (min 50 characters)..."
                 className="h-32 resize-none"
-                required
               />
-              {sourceText.length > 0 && sourceText.length < 50 && (
+              {!isTextValid && combinedTextLength > 0 && (
                 <p className="text-sm text-red-500">
-                  Need {50 - sourceText.length} more characters (minimum 50 required)
+                  Need {50 - combinedTextLength} more characters
                 </p>
               )}
             </div>
 
+            {/* Smart Template Recommendation */}
+            <SmartTemplateSelector
+              content={getCombinedSourceText()}
+              currentTemplate={templateType as "NEWS" | "STORY" | "PRODUCT"}
+              onTemplateChange={(template) => setTemplateType(template)}
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="template-type">Template Type</Label>
+                <Label htmlFor="template-type">Type</Label>
                 <Select value={templateType} onValueChange={setTemplateType}>
                   <SelectTrigger className="h-10">
                     <SelectValue>
-                      {templateTypes.find(t => t.value === templateType)?.label || "Select template"}
+                      {templateTypes.find(t => t.value === templateType)?.label || "Select type"}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="w-[280px]">
+                  <SelectContent>
                     {templateTypes.map((template) => (
-                      <SelectItem key={template.value} value={template.value} className="py-3">
-                        <div className="flex flex-col gap-1 w-full">
-                          <span className="font-medium text-sm">{template.label}</span>
-                          <span className="text-xs text-muted-foreground leading-tight break-words">{template.description}</span>
-                        </div>
+                      <SelectItem key={template.value} value={template.value}>
+                        {template.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Choose content structure</p>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="slide-count">Number of Slides</Label>
+                <Label htmlFor="slide-count">Slides</Label>
                 <Input
                   id="slide-count"
                   type="number"
@@ -267,32 +309,31 @@ export function NewProjectDialog({
                   onChange={(e) => setSlideCount(Number(e.target.value))}
                   className="w-full h-10"
                 />
-                <p className="text-xs text-muted-foreground">Recommended: 5-7 slides</p>
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of your carousel..."
+                placeholder="Brief description..."
                 className="h-20"
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="document">Source Document (Optional)</Label>
-              <Select value={documentId} onValueChange={setDocumentId}>
+              <Label htmlFor="document">Source Document</Label>
+              <Select value={documentId} onValueChange={handleDocumentChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a document" />
+                  <SelectValue placeholder="Select document" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No document</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {documents.map((document) => (
                     <SelectItem key={document.id} value={document.id}>
-                      {document.title} ({document.word_count} words)
+                      {document.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -300,29 +341,12 @@ export function NewProjectDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="template">Brand Voice Template (Optional)</Label>
-              <Select value={templateId} onValueChange={setTemplateId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No template</SelectItem>
-                  {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="audience">Target Audience (Optional)</Label>
+              <Label htmlFor="audience">Target Audience</Label>
               <Input
                 id="audience"
                 value={targetAudience}
                 onChange={(e) => setTargetAudience(e.target.value)}
-                placeholder="e.g., Small business owners, Content creators..."
+                placeholder="e.g., Content creators..."
               />
             </div>
           </div>
@@ -330,7 +354,7 @@ export function NewProjectDialog({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!title.trim() || sourceText.trim().length < 50 || isLoading}>
+            <Button type="submit" disabled={!title.trim() || !isTextValid || isLoading}>
               {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {isLoading ? loadingStage : "Create Carousel"}
             </Button>

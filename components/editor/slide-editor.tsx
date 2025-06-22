@@ -12,6 +12,7 @@ import { SuggestionsButton } from "@/components/editor/suggestions-button"
 import { SuggestionsCard } from "@/components/editor/suggestions-card"
 import { GrammarSidebar } from "@/components/editor/grammar-sidebar"
 import { GrammarStatusIndicator } from "@/components/editor/grammar-status-indicator"
+import { BrandVoiceInsights } from "@/components/editor/brand-voice-insights"
 import type { Slide } from "@/lib/types"
 import type { Suggestion } from "@/app/api/generate-variations/route"
 
@@ -22,6 +23,7 @@ interface SlideEditorProps {
 export function SlideEditor({ projectId }: SlideEditorProps) {
   const {
     slides,
+    projects,
     currentSlide,
     selectedTemplate,
     isAutoSaving,
@@ -311,6 +313,12 @@ export function SlideEditor({ projectId }: SlideEditorProps) {
               </CardContent>
             </Card>
           )}
+
+          {/* Brand Voice Insights */}
+          <BrandVoiceInsights
+            userProjects={projects}
+            userSlides={slides}
+          />
         </div>
       </div>
     </div>

@@ -41,6 +41,32 @@ const instagramLimits = {
   total: 2200
 }
 
+// Parse combined content (document + additional text)
+function parseCombinedContent(sourceText: string): { 
+  mainContent: string; 
+  additionalContext: string; 
+  isCombined: boolean 
+} {
+  // Check if this is combined content with our separator
+  if (sourceText.includes('\n---\n\nAdditional Context:\n')) {
+    const parts = sourceText.split('\n---\n\nAdditional Context:\n')
+    if (parts.length === 2) {
+      return {
+        mainContent: parts[0].trim(),
+        additionalContext: parts[1].trim(),
+        isCombined: true
+      }
+    }
+  }
+  
+  // Not combined content, return as-is
+  return {
+    mainContent: sourceText.trim(),
+    additionalContext: '',
+    isCombined: false
+  }
+}
+
 // Split text intelligently
 function intelligentTextSplit(text: string, slideCount: number): string[] {
   const cleanText = text.trim().replace(/\s+/g, ' ')
@@ -90,6 +116,7 @@ function intelligentTextSplit(text: string, slideCount: number): string[] {
 async function generateSlideContent(
   prompt: string,
   sourceText: string,
+  additionalContext: string,
   templateType: string,
   slideNumber: number,
   totalSlides: number
@@ -105,11 +132,15 @@ IMPORTANT CONSTRAINTS:
 - Keep sentences short and punchy
 
 Template type: ${templateType}
-Slide ${slideNumber} of ${totalSlides}`
+Slide ${slideNumber} of ${totalSlides}
+
+${additionalContext ? `ADDITIONAL INSTRUCTIONS: ${additionalContext}` : ''}`
 
     const userPrompt = `${prompt}
 
 Source content: "${sourceText}"
+
+${additionalContext ? `\nSpecial Instructions: ${additionalContext}\nMake sure to incorporate these instructions into your content creation.` : ''}
 
 Generate:
 1. A catchy title (max ${instagramLimits.title} chars)
@@ -200,19 +231,27 @@ export async function POST(request: NextRequest) {
 
     console.log(`Generating ${slide_count} slides for ${template_type} template...`)
 
-    // Split source text into segments
-    const textSegments = intelligentTextSplit(source_text, slide_count)
+    // Parse combined content (document + additional context)
+    const { mainContent, additionalContext, isCombined } = parseCombinedContent(source_text)
+    
+    if (isCombined) {
+      console.log(`Detected combined content: ${mainContent.length} chars main + ${additionalContext.length} chars context`)
+    }
+
+    // Split source text into segments (use main content for splitting)
+    const textSegments = intelligentTextSplit(mainContent, slide_count)
     const templateStructure = templateStructures[template_type as keyof typeof templateStructures]
     
     // Generate slides
     const slides = []
     for (let i = 1; i <= slide_count; i++) {
       const slideInfo = templateStructure[i as keyof typeof templateStructure] || templateStructure[5] // Fallback to CTA
-      const relevantText = textSegments[i - 1] || source_text
+      const relevantText = textSegments[i - 1] || mainContent
       
       const { title, content } = await generateSlideContent(
         slideInfo.prompt,
         relevantText,
+        additionalContext, // Pass additional context to AI
         template_type,
         i,
         slide_count

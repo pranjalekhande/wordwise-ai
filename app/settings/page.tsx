@@ -6,8 +6,14 @@ import { NotificationSettings } from "@/components/settings/notification-setting
 import { AppearanceSettings } from "@/components/settings/appearance-settings"
 import { BillingSettings } from "@/components/settings/billing-settings"
 import { PrivacySettings } from "@/components/settings/privacy-settings"
+import { useEffect } from "react"
 
 export default function SettingsPage() {
+  // Set document title on client side
+  useEffect(() => {
+    document.title = "Settings - WordWise AI"
+  }, [])
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="space-y-6">
