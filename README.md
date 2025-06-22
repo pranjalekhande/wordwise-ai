@@ -1,151 +1,459 @@
 # WordWise AI
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+**AI-Powered Writing Assistant & Content Creation Platform**
 
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/pranjals-projects-82cc138b/v0-word-wise-ai)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/yDvEfAMV71m)
+[![Next.js](https://img.shields.io/badge/Next.js-15.2.4-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-38bdf8?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+
+---
 
 ## Overview
 
-WordWise AI is a document management and writing assistance platform that supports multiple file formats for document upload and analysis.
+WordWise AI is a modern, AI-powered writing assistant and content creation platform designed for creators, marketers, and professionals. Transform your documents into polished content, create Instagram carousels, and enhance your writing with intelligent AI assistance.
 
-## Features
+### Key Features
 
-### 📄 Document Upload & Processing
-- **Text Files (.txt)**: Direct text file upload and processing
-- **Markdown Files (.md)**: Full markdown file support with formatting preservation
-- **Word Documents (.docx)**: ⚠️ **Temporarily disabled** - Will be fixed in a future update
-- **File Metadata Tracking**: Stores original file name, size, and type for reference
+- **AI Writing Assistant** - Real-time grammar checking, style suggestions, and readability analysis
+- **Instagram Carousel Creation** - Transform documents into engaging social media content
+- **Smart Document Management** - Upload, edit, and manage multiple file formats
+- **Template Intelligence** - AI-powered template recommendations
+- **Content Analytics** - Writing scores and performance metrics
+- **Brand Voice Insights** - Maintain consistent tone across content
+- **Multi-format Export** - PDF, images, ZIP files, and direct sharing
 
-### 🔧 File Processing
-- **Smart File Detection**: Automatically detects file types and applies appropriate parsing
-- **Error Handling**: Graceful handling of unsupported files with user-friendly error messages
-- **Progress Indicators**: Real-time feedback during file processing
-- **Content Extraction**: Preserves formatting and structure from source documents
+---
 
-### 🔐 Authentication
-- **Clerk Authentication**: Secure user authentication with sign-in and sign-up
-- **Protected Routes**: Automatic redirection to login for unauthenticated users
-- **User Session Management**: Persistent user sessions across the application
+## Architecture & Tech Stack
 
-## Setup Instructions
+### **Frontend**
+- **Framework**: Next.js 15.2.4 with App Router
+- **Language**: TypeScript 5.0
+- **Styling**: Tailwind CSS 3.4.17 + Radix UI components
+- **UI Components**: Shadcn/ui with custom brown/amber theme
+- **Icons**: Lucide React
+- **Animations**: Tailwind CSS Animate
+
+### **Backend & Infrastructure**
+- **API**: Next.js API routes with TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Clerk (Email, Social, SSO)
+- **File Storage**: Supabase Storage
+- **AI Integration**: OpenAI API for content analysis
+
+### **Development & Deployment**
+- **Package Manager**: pnpm
+- **Build Tool**: Next.js built-in
+- **Deployment**: Vercel with automatic deployments
+- **Version Control**: Git with GitHub
+- **Code Quality**: ESLint + TypeScript
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- Node.js v18.12 or higher (current version v14.15.4 needs upgrading)
-- npm, yarn, or pnpm package manager
+- **Node.js** >= 18.12.0 ([Download](https://nodejs.org/))
+- **pnpm** >= 8.0.0 (`npm install -g pnpm`)
+- **Git** for version control
 
 ### Installation
 
-1. **Update Node.js** (required for package installation):
+1. **Clone the repository**
    ```bash
-   # Using nvm (recommended)
-   nvm install 18
-   nvm use 18
-   
-   # Or download from https://nodejs.org/
+   git clone https://github.com/your-username/wordwise-ai.git
+   cd wordwise-ai
    ```
 
-2. **Install Dependencies**:
+2. **Install dependencies**
    ```bash
-   # Using npm
-   npm install
-   
-   # Using yarn
-   yarn install
-   
-   # Using pnpm
    pnpm install
    ```
 
-3. **Configure Environment Variables**:
-   Create a `.env.local` file in the root directory with the following variables:
-   
+3. **Environment setup**
    ```bash
-   # Clerk Authentication
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key_here
-   CLERK_SECRET_KEY=sk_test_your_clerk_secret_key_here
-   
-   # Supabase Configuration
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+   cp .env.example .env.local
    ```
 
-4. **Set up Clerk Authentication**:
-   - Go to [dashboard.clerk.com](https://dashboard.clerk.com) and create a new application
-   - Copy your publishable key and secret key
-   - Replace the placeholder values in your `.env.local` file
-   - Configure your allowed redirect URLs in Clerk dashboard:
-     - Sign-in URL: `/sign-in`
-     - Sign-up URL: `/sign-up`
-     - After sign-in URL: `/`
-     - After sign-up URL: `/`
+4. **Configure environment variables** (see [Environment Setup](#environment-setup))
 
-5. **Set up Supabase** (if using):
-   - Configure Supabase credentials in your environment variables
-   - Set up your database schema using the provided SQL scripts in `/scripts`
+5. **Run development server**
+   ```bash
+   pnpm dev
+   ```
 
-### Development
+6. **Open in browser**
+   ```
+   http://localhost:3000
+   ```
+
+---
+
+## Environment Setup
+
+Create a `.env.local` file in the project root:
 
 ```bash
-# Start the development server
-npm run dev
+# === Clerk Authentication ===
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
+CLERK_SECRET_KEY=sk_test_your_clerk_secret_key
 
-# The app will be available at http://localhost:3000
+# === Supabase Database ===
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# === OpenAI API ===
+OPENAI_API_KEY=sk-your_openai_api_key
+
+# === Application Settings ===
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
 ```
 
-### Recent Updates
+### **Clerk Authentication Setup**
 
-#### File Upload Enhancement
-- ✅ Enhanced file type detection and validation for `.txt` and `.md` files
-- ✅ Improved user interface with processing states
-- ✅ Added file metadata storage in database
-- ⚠️ **DOCX support temporarily disabled** - Implementation needs fixes
+1. Create account at [dashboard.clerk.com](https://dashboard.clerk.com)
+2. Create new application
+3. Configure redirect URLs:
+   - **Sign-in URL**: `/sign-in`
+   - **Sign-up URL**: `/sign-up`
+   - **After sign-in URL**: `/`
+   - **After sign-up URL**: `/`
+4. Copy API keys to `.env.local`
 
-#### Technical Changes
-- **File Support**: Currently supports `.txt` and `.md` file uploads
-- **API Updates**: Enhanced document creation API to handle file metadata
-- **UI Improvements**: Better error handling and progress indicators
-- **DOCX Implementation**: Commented out pending fixes (officeparser integration)
+### **Supabase Database Setup**
 
-## Deployment
+1. Create account at [supabase.com](https://supabase.com)
+2. Create new project
+3. Run database schema:
+   ```bash
+   # Navigate to SQL editor in Supabase dashboard
+   # Run scripts from /scripts directory in order:
+   # 1. enhanced-schema.sql
+   # 2. documents-schema.sql
+   # 3. complete-schema.sql
+   ```
+4. Configure Row Level Security (RLS) policies
+5. Copy database URL and keys to `.env.local`
 
-Your project is live at:
+### **OpenAI API Setup**
 
-**[https://vercel.com/pranjals-projects-82cc138b/v0-word-wise-ai](https://vercel.com/pranjals-projects-82cc138b/v0-word-wise-ai)**
+1. Create account at [platform.openai.com](https://platform.openai.com)
+2. Generate API key
+3. Add to `.env.local`
+4. Ensure billing is set up for API usage
 
-## Build your app
+---
 
-Continue building your app on:
+## Production Deployment
 
-**[https://v0.dev/chat/projects/yDvEfAMV71m](https://v0.dev/chat/projects/yDvEfAMV71m)**
+### **Vercel Deployment (Recommended)**
 
-## How It Works
+1. **Connect repository**
+   ```bash
+   # Install Vercel CLI
+   npm install -g vercel
+   
+   # Login and deploy
+   vercel login
+   vercel --prod
+   ```
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+2. **Configure environment variables in Vercel dashboard**
+   - Go to Project Settings → Environment Variables
+   - Add all variables from `.env.local`
+   - Set `NODE_ENV=production`
 
-## File Upload Flow
+3. **Custom domain setup**
+   ```bash
+   # In Vercel dashboard
+   # Domains → Add domain → Configure DNS
+   ```
 
-1. **File Selection**: Users can drag & drop or browse for supported files
-2. **File Validation**: System checks file type and size
-3. **Content Extraction**: 
-   - Text/Markdown: Direct text reading
-   - DOCX: ⚠️ Currently disabled (will be fixed later)
-4. **Document Creation**: Saves content with metadata to database
-5. **Display**: Shows documents with file type indicators
+### **Alternative Deployment Options**
+
+#### **Docker Deployment**
+```dockerfile
+# Dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+#### **AWS/Google Cloud/Azure**
+```bash
+# Build for production
+pnpm build
+pnpm start
+
+# Or use container deployment
+docker build -t wordwise-ai .
+docker run -p 3000:3000 wordwise-ai
+```
+
+---
+
+## Development Workflow
+
+### **Available Scripts**
+
+```bash
+# Development
+pnpm dev          # Start development server
+pnpm build        # Build for production
+pnpm start        # Start production server
+pnpm lint         # Run ESLint
+pnpm type-check   # Run TypeScript checks
+
+# Database
+pnpm db:generate  # Generate database types
+pnpm db:push      # Push schema changes
+pnpm db:studio    # Open database studio
+```
+
+### **Project Structure**
+
+```
+wordwise-ai/
+├── app/                    # Next.js app router
+│   ├── api/               # API routes
+│   ├── (auth)/            # Authentication pages
+│   ├── documents/         # Document management
+│   ├── editor/            # Content editor
+│   └── settings/          # User settings
+├── components/            # React components
+│   ├── ui/               # Base UI components
+│   ├── landing/          # Landing page
+│   ├── documents/        # Document features
+│   ├── editor/           # Editor components
+│   └── auth/             # Authentication
+├── lib/                   # Utility functions
+│   ├── auth.ts           # Authentication helpers
+│   ├── supabase.ts       # Database client
+│   ├── types.ts          # TypeScript types
+│   └── utils.ts          # General utilities
+├── scripts/               # Database scripts
+├── public/                # Static assets
+└── styles/                # Global styles
+```
+
+### **Component Architecture**
+
+- **Page Components** (`app/`): Route-level components
+- **Feature Components** (`components/`): Reusable business logic
+- **UI Components** (`components/ui/`): Base design system
+- **Utility Functions** (`lib/`): Shared business logic
+
+---
+
+## Integrations & APIs
+
+### **Authentication (Clerk)**
+```typescript
+// Authentication flow
+import { useUser, useAuth } from "@clerk/nextjs"
+
+// Protected routes
+export function ProtectedComponent() {
+  const { isSignedIn, user } = useUser()
+  // Component logic
+}
+```
+
+### **Database (Supabase)**
+```typescript
+// Database operations
+import { supabase } from "@/lib/supabase"
+
+// Create document
+const { data, error } = await supabase
+  .from('documents')
+  .insert({ title, content, user_id })
+```
+
+### **AI Integration (OpenAI)**
+```typescript
+// Content analysis
+import { OpenAI } from 'openai'
+
+const completion = await openai.chat.completions.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: prompt }]
+})
+```
+
+### **File Processing**
+```typescript
+// Document upload and processing
+const processDocument = async (file: File) => {
+  // Extract content based on file type
+  // Store in database with metadata
+  // Return processed document
+}
+```
+
+---
+
+## Monitoring & Analytics
+
+### **Performance Monitoring**
+- **Core Web Vitals**: Tracked via Vercel Analytics
+- **Error Tracking**: Built-in Next.js error boundaries
+- **Database Performance**: Supabase dashboard metrics
+
+### **User Analytics**
+- **Authentication Events**: Clerk dashboard
+- **Feature Usage**: Custom event tracking
+- **Content Metrics**: Document creation and usage stats
+
+---
 
 ## Troubleshooting
 
-### Package Installation Issues
-If you encounter package installation errors:
-1. Ensure Node.js version is 18.12 or higher
-2. Clear npm cache: `npm cache clean --force`
-3. Delete node_modules and package-lock.json, then reinstall
+### **Common Issues**
 
-### File Upload Issues
-- **Unsupported File Type**: Currently only .txt and .md files are supported (.docx temporarily disabled)
-- **Large File Sizes**: Check file size limits in your environment
-- **DOCX Files**: Currently not supported - feature is being fixed for future release
+#### **Development Server Won't Start**
+```bash
+# Clear cache and reinstall
+rm -rf .next node_modules pnpm-lock.yaml
+pnpm install
+pnpm dev
+```
+
+#### **Authentication Issues**
+```bash
+# Check environment variables
+echo $NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+echo $CLERK_SECRET_KEY
+
+# Verify Clerk configuration
+# - Check redirect URLs in Clerk dashboard
+# - Ensure middleware.ts is properly configured
+```
+
+#### **Database Connection Issues**
+```bash
+# Test Supabase connection
+# Check environment variables
+echo $NEXT_PUBLIC_SUPABASE_URL
+echo $NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Verify RLS policies are set up correctly
+```
+
+#### **Build/Deployment Issues**
+```bash
+# Check TypeScript errors
+pnpm type-check
+
+# Verify environment variables in production
+# Ensure all required variables are set in Vercel dashboard
+```
+
+### **Performance Optimization**
+
+- **Images**: Use Next.js Image component with optimization
+- **Fonts**: Preload fonts and use font-display: swap
+- **Code Splitting**: Implement dynamic imports for large components
+- **Caching**: Configure appropriate cache headers
+
+---
+
+## Contributing
+
+### **Development Guidelines**
+
+1. **Code Style**
+   - Use TypeScript for all new code
+   - Follow ESLint configuration
+   - Use Prettier for formatting
+   - Write descriptive component and function names
+
+2. **Component Guidelines**
+   - Keep components under 500 lines
+   - Use functional components with hooks
+   - Add JSDoc comments for complex functions
+   - Prefer composition over inheritance
+
+3. **Git Workflow**
+   ```bash
+   # Create feature branch
+   git checkout -b feature/new-feature
+   
+   # Make changes and commit
+   git add .
+   git commit -m "feat: add new feature"
+   
+   # Push and create PR
+   git push origin feature/new-feature
+   ```
+
+### **Pull Request Process**
+
+1. Ensure all tests pass
+2. Update documentation if needed
+3. Add screenshots for UI changes
+4. Request review from maintainers
+
+---
+
+## Roadmap
+
+### **Phase 1: Core Features** ✓
+- ► Landing page with authentication
+- ► Document management system
+- ► Basic AI writing assistance
+- ► Instagram carousel creation
+
+### **Phase 2: Advanced Features** (In Progress)
+- ► Advanced grammar checking
+- ► Brand voice analysis
+- ► Template marketplace
+- ► Collaboration features
+
+### **Phase 3: Enterprise** (Planned)
+- ► Team management
+- ► Advanced analytics
+- ► API access
+- ► White-label options
+
+---
+
+## License & Copyright
+
+© 2025 **Pranjal Ekhande**. All rights reserved.
+
+This project is proprietary software. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
+
+---
+
+## Support & Contact
+
+- **Author**: Pranjal Ekhande
+- **Documentation**: [Project Wiki](./docs/)
+- **Issues**: [GitHub Issues](https://github.com/your-username/wordwise-ai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/wordwise-ai/discussions)
+
+---
+
+## Acknowledgments
+
+- **Next.js Team** for the excellent framework
+- **Vercel** for seamless deployment
+- **Clerk** for authentication infrastructure
+- **Supabase** for database and storage
+- **OpenAI** for AI capabilities
+- **Radix UI** for accessible components
+- **Tailwind CSS** for styling system
+
+---
+
+**Built with ❤️ by [Pranjal Ekhande](https://github.com/your-username)**

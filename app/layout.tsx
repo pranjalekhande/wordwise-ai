@@ -10,9 +10,8 @@ import { Toaster } from "sonner"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "WordWise AI - Instagram Carousel",
-  description: "AI-powered Instagram carousel copywriting tool",
-    generator: 'v0.dev'
+  title: "WordWise AI - AI-Powered Writing Assistant & Content Creation",
+  description: "Transform your writing with AI intelligence. Create Instagram carousels, get smart grammar checking, and produce compelling content with intelligent templates and brand voice insights.",
 }
 
 export default function RootLayout({
@@ -20,32 +19,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  // Check for required environment variables
-  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-
-  if (!clerkPublishableKey || clerkPublishableKey === "your_clerk_publishable_key") {
-    return (
-      <html lang="en">
-        <body className={inter.className}>
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center space-y-4">
-              <h1 className="text-2xl font-bold">Configuration Required</h1>
-              <div className="space-y-2 text-left max-w-md">
-                <p className="text-muted-foreground">Please configure your environment variables:</p>
-                <div className="bg-muted p-4 rounded-lg text-sm font-mono">
-                  <p>1. Create .env.local file</p>
-                  <p>2. Add Clerk keys from dashboard.clerk.com</p>
-                  <p>3. Add Supabase keys from your project dashboard</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <Toaster position="top-right" richColors />
-        </body>
-      </html>
-    )
-  }
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -55,7 +28,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClerkProvider>
+          <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "demo"}>
             <LayoutWrapper>
               {children}
             </LayoutWrapper>

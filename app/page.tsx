@@ -1,25 +1,32 @@
 "use client"
 
+import { useUser } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
 import { ProjectList } from "@/components/dashboard/project-list"
 import { NewProjectDialog } from "@/components/dashboard/new-project-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Plus, TrendingUp, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { LandingPage } from "@/components/landing/landing-page"
 
 interface UserStats {
   writingScore: number
 }
 
-export default function Dashboard() {
+export default function HomePage() {
+  const { isSignedIn, isLoaded } = useUser()
   const router = useRouter()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false)
 
   useEffect(() => {
-    fetchUserStats()
-  }, [])
+    if (isSignedIn) {
+      fetchUserStats()
+    } else {
+      setIsLoading(false)
+    }
+  }, [isSignedIn])
 
   const fetchUserStats = async () => {
     try {
@@ -47,6 +54,24 @@ export default function Dashboard() {
     setIsNewProjectDialogOpen(true)
   }
 
+  // Show loading state while authentication is being checked
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Show landing page for unauthenticated users
+  if (!isSignedIn) {
+    return <LandingPage />
+  }
+
+  // Show dashboard for authenticated users
   return (
     <div className="container mx-auto p-6 space-y-8">
       {/* Quick Actions */}

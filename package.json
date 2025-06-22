@@ -1,7 +1,9 @@
 {
-  "name": "my-v0-project",
+  "name": "wordwise-ai",
   "version": "0.1.0",
   "private": true,
+  "author": "Pranjal Ekhande",
+  "description": "AI-powered writing assistant and content creation platform",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
